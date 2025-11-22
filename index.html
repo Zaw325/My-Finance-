@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance Master V1.4</title>
+    <title>Finance Master V1.5</title>
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="icon" type="image/png" href="icon-192.png">
     <link rel="manifest" href="manifest.json">
@@ -160,7 +160,7 @@
             </button>
         );
 
-        // 1. DASHBOARD TAB (WITH BACKUP)
+        // 1. DASHBOARD TAB
         function DashboardTab({ data, onBackup, onRestore }) {
             const calcTotal = (arr, type, currency) => arr.filter(i => i.type === type && i.currency === currency).reduce((sum, i) => sum + (parseFloat(i.amount) - (parseFloat(i.paid)||0)), 0);
             const assetKs = data.assets.filter(i => i.currency === 'Ks').reduce((sum, i) => sum + parseFloat(i.amount), 0);
@@ -199,7 +199,6 @@
                         </div>
                     </div>
 
-                    {/* DATA BACKUP SECTION */}
                     <div className="mt-6 pt-6 border-t border-slate-200">
                          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Data Backup (Lifetime Safe)</h3>
                          <div className="grid grid-cols-2 gap-3">
@@ -271,13 +270,13 @@
             );
         }
 
-        // 3. DEBTS TAB
+        // 3. DEBTS TAB (WITH NOTE BOX)
         function DebtsTab({ data, onAdd, onDelete, onPay }) {
             const [view, setView] = useState('lent');
             const [isOpen, setIsOpen] = useState(false);
             const [payModal, setPayModal] = useState(null);
             const [payAmount, setPayAmount] = useState('');
-            const [form, setForm] = useState({ name: '', amount: '', currency: 'Ks', type: 'lent', status: 'active' });
+            const [form, setForm] = useState({ name: '', amount: '', currency: 'Ks', note: '', type: 'lent', status: 'active' });
             const filtered = data.filter(i => i.type === view);
             return (
                 <div className="pb-20">
@@ -287,7 +286,7 @@
                             const paid = parseFloat(item.paid) || 0; const total = parseFloat(item.amount); const remaining = total - paid; const percent = Math.min(100, (paid / total) * 100);
                             return (
                                 <div key={item.id} className={`bg-white p-4 rounded-xl shadow-sm border-l-4 ${item.status === 'completed' ? 'border-slate-300 opacity-70' : (view==='lent'?'border-green-500':'border-red-500')}`}>
-                                    <div className="flex justify-between items-start mb-2"><div><h3 className="font-bold text-slate-700">{item.name}</h3><p className="text-[10px] text-slate-400">{new Date(item.date).toLocaleDateString()}</p></div><div className="text-right"><span className={`font-bold text-lg ${view==='lent'?'text-green-600':'text-red-600'}`}>{total.toLocaleString()} <span className="text-xs">{item.currency}</span></span></div></div>
+                                    <div className="flex justify-between items-start mb-2"><div><h3 className="font-bold text-slate-700">{item.name}</h3><p className="text-[10px] text-slate-400">{new Date(item.date).toLocaleDateString()}</p>{item.note && <p className="text-xs text-slate-500 italic mt-1 bg-slate-50 p-1 rounded inline-block">"{item.note}"</p>}</div><div className="text-right"><span className={`font-bold text-lg ${view==='lent'?'text-green-600':'text-red-600'}`}>{total.toLocaleString()} <span className="text-xs">{item.currency}</span></span></div></div>
                                     <div className="w-full h-2 bg-slate-100 rounded-full mb-2 overflow-hidden"><div className="h-full bg-gold transition-all duration-500" style={{width: `${percent}%`}}></div></div>
                                     <div className="flex justify-between items-center"><span className="text-xs font-bold text-slate-500">Rem: {remaining.toLocaleString()} {item.currency}</span><div className="flex gap-2"><button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500"><Icons.Trash /></button>{item.status !== 'completed' ? ( <button onClick={() => setPayModal(item.id)} className="px-3 py-1 bg-slate-800 text-white text-[10px] font-bold rounded-lg active:scale-95">{view === 'lent' ? '+ Receive' : '+ Pay'}</button> ) : ( <span className="text-xs font-bold text-green-600 flex items-center gap-1"><Icons.Check className="w-3 h-3"/> Done</span> )}</div></div>
                                 </div>
@@ -295,7 +294,7 @@
                         })}
                     </div>
                     <button onClick={() => { setForm({...form, type: view}); setIsOpen(true); }} className="fixed bottom-24 right-4 bg-primary text-gold h-14 w-14 rounded-full shadow-xl flex items-center justify-center animate-bounce z-20"><Icons.Plus /></button>
-                    {isOpen && ( <Modal title={view === 'lent' ? "Add Receivable" : "Add Payable"} onClose={() => setIsOpen(false)}><div className="space-y-3"><input placeholder="Person Name" className="w-full p-3 border rounded-xl" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /><div className="flex gap-2"><input type="number" placeholder="Total Amount" className="flex-1 p-3 border rounded-xl" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} /><select className="w-20 p-3 border rounded-xl bg-slate-50 font-bold" value={form.currency} onChange={e => setForm({...form, currency: e.target.value})}><option value="Ks">Ks</option><option value="$">$</option></select></div><button onClick={() => { if(form.name && form.amount) { onAdd(form); setIsOpen(false); setForm({name:'', amount:'', currency:'Ks', type:view, status:'active'}); }}} className="w-full bg-primary text-gold py-3 rounded-xl font-bold mt-2">Save</button></div></Modal> )}
+                    {isOpen && ( <Modal title={view === 'lent' ? "Add Receivable" : "Add Payable"} onClose={() => setIsOpen(false)}><div className="space-y-3"><input placeholder="Person Name" className="w-full p-3 border rounded-xl" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /><textarea placeholder="Note (e.g. Phone Bill, Dinner)" className="w-full p-3 border rounded-xl" rows="2" value={form.note} onChange={e => setForm({...form, note: e.target.value})}></textarea><div className="flex gap-2"><input type="number" placeholder="Total Amount" className="flex-1 p-3 border rounded-xl" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} /><select className="w-20 p-3 border rounded-xl bg-slate-50 font-bold" value={form.currency} onChange={e => setForm({...form, currency: e.target.value})}><option value="Ks">Ks</option><option value="$">$</option></select></div><button onClick={() => { if(form.name && form.amount) { onAdd(form); setIsOpen(false); setForm({name:'', amount:'', currency:'Ks', note: '', type:view, status:'active'}); }}} className="w-full bg-primary text-gold py-3 rounded-xl font-bold mt-2">Save</button></div></Modal> )}
                     {payModal && ( <Modal title="Add Payment" onClose={() => {setPayModal(null); setPayAmount('')}}><div className="space-y-3"><p className="text-sm text-slate-500">Enter amount paid/received:</p><input type="number" placeholder="Amount" className="w-full p-3 border rounded-xl" value={payAmount} onChange={e => setPayAmount(e.target.value)} /><button onClick={() => { if(payAmount) { onPay(payModal, payAmount); setPayModal(null); setPayAmount(''); }}} className="w-full bg-green-600 text-white py-3 rounded-xl font-bold mt-2">Confirm Payment</button></div></Modal> )}
                 </div>
             );
