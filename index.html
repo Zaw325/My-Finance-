@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Master V1.4</title>
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0f172a', // Navy Blue
+                        primaryLight: '#1e293b', 
+                        gold: '#f59e0b', // Amber
+                        goldLight: '#fcd34d', 
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        input:focus, select:focus, textarea:focus { outline: 2px solid #f59e0b; outline-offset: 1px; }
+        .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS ---
+        const Icon = ({ d, className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d={d} /></svg>;
+        const Icons = {
+            Wallet: () => <Icon d="M20 12V8H6a2 2 0 0 1-2-2 2 2 0 0 1 2-2h12v4" className="w-5 h-5" />,
+            Exchange: () => <Icon d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3" className="w-5 h-5" />,
+            Briefcase: () => <Icon d="M20 7h-4V4c0-1.1-.9-2-2-2h-4C9 2 8 2.9 8 4v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2z" className="w-5 h-5" />,
+            PieChart: () => <Icon d="M21.21 15.89A10 10 0 1 1 8 2.83" className="w-5 h-5" />,
+            Plus: () => <Icon d="M12 5v14M5 12h14" className="w-5 h-5" />,
+            Trash: () => <Icon d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" className="w-5 h-5" />,
+            TrendingUp: () => <Icon d="M23 6l-9.5 9.5-5-5L1 18" className="w-5 h-5" />,
+            TrendingDown: () => <Icon d="M23 18l-9.5-9.5-5 5L1 6" className="w-5 h-5" />,
+            Check: () => <Icon d="M20 6L9 17l-5-5" className="w-5 h-5" />,
+            Left: () => <Icon d="M15 18l-6-6 6-6" className="w-5 h-5" />,
+            Right: () => <Icon d="M9 18l6-6-6-6" className="w-5 h-5" />,
+            Calendar: () => <Icon d="M19 4h-1V3a1 1 0 0 0-2 0v1H8V3a1 1 0 0 0-2 0v1H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14v11z" className="w-5 h-5" />,
+            Save: () => <Icon d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" className="w-5 h-5" />,
+            Refresh: () => <Icon d="M23 4v6h-6M1 20v-6h6" className="w-5 h-5" />,
+        };
+
+        // --- DATA MANAGEMENT ---
+        const DATA_KEY = 'finance_master_v1';
+        const loadData = () => {
+            try { return JSON.parse(localStorage.getItem(DATA_KEY)) || { cashflow: [], debts: [], assets: [] }; } 
+            catch (e) { return { cashflow: [], debts: [], assets: [] }; }
+        };
+
+        function App() {
+            const [data, setData] = useState(loadData);
+            const [activeTab, setActiveTab] = useState('dashboard');
+
+            useEffect(() => { localStorage.setItem(DATA_KEY, JSON.stringify(data)); }, [data]);
+
+            // --- ACTIONS ---
+            const addEntry = (key, item) => {
+                const newItem = key === 'debts' ? { ...item, paid: 0 } : item;
+                setData(prev => ({ ...prev, [key]: [{ ...newItem, id: Date.now(), date: new Date().toISOString() }, ...prev[key]] }));
+            };
+
+            const deleteEntry = (key, id) => {
+                if(confirm("Are you sure?")) setData(prev => ({ ...prev, [key]: prev[key].filter(i => i.id !== id) }));
+            };
+
+            const addDebtPayment = (id, amount) => {
+                setData(prev => ({
+                    ...prev,
+                    debts: prev.debts.map(item => {
+                        if (item.id !== id) return item;
+                        const newPaid = (parseFloat(item.paid) || 0) + parseFloat(amount);
+                        const total = parseFloat(item.amount);
+                        const status = newPaid >= total ? 'completed' : 'active';
+                        return { ...item, paid: newPaid, status };
+                    })
+                }));
+            };
+
+            // --- BACKUP SYSTEM ---
+            const handleBackup = () => {
+                const dataStr = JSON.stringify(localStorage.getItem(DATA_KEY));
+                const blob = new Blob([JSON.parse(dataStr)], {type: "application/json"});
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `finance_backup_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            const handleRestore = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const content = JSON.parse(e.target.result);
+                        if (content.cashflow && content.debts) {
+                            if(confirm("Warning: Current data will be replaced by backup. Proceed?")) {
+                                localStorage.setItem(DATA_KEY, JSON.stringify(content));
+                                alert("Success! Restarting app...");
+                                window.location.reload();
+                            }
+                        } else { alert("Invalid Backup File"); }
+                    } catch (err) { alert("Error restoring data."); }
+                };
+                reader.readAsText(file);
+            };
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen bg-slate-50 pb-24 text-slate-800">
+                    <div className="bg-primary text-white p-5 sticky top-0 z-40 shadow-lg shadow-slate-200">
+                        <div className="flex justify-between items-center">
+                            <div><h1 className="text-xl font-bold tracking-tight text-gold">Finance Master</h1><p className="text-xs text-slate-400">Manage your wealth</p></div>
+                            <div className="h-8 w-8 bg-slate-700 rounded-full flex items-center justify-center text-gold font-bold">Z</div>
+                        </div>
+                    </div>
+
+                    <div className="p-4">
+                        {activeTab === 'dashboard' && <DashboardTab data={data} onBackup={handleBackup} onRestore={handleRestore} />}
+                        {activeTab === 'cashflow' && <CashflowTab data={data.cashflow} onAdd={(item) => addEntry('cashflow', item)} onDelete={(id) => deleteEntry('cashflow', id)} />}
+                        {activeTab === 'debts' && <DebtsTab data={data.debts} onAdd={(item) => addEntry('debts', item)} onDelete={(id) => deleteEntry('debts', id)} onPay={addDebtPayment} />}
+                        {activeTab === 'assets' && <AssetsTab data={data.assets} onAdd={(item) => addEntry('assets', item)} onDelete={(id) => deleteEntry('assets', id)} />}
+                    </div>
+
+                    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around py-3 pb-safe safe-area-pb z-30 max-w-md mx-auto shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                        <NavBtn id="dashboard" icon={<Icons.PieChart />} label="Summary" active={activeTab} set={setActiveTab} />
+                        <NavBtn id="cashflow" icon={<Icons.Wallet />} label="CashFlow" active={activeTab} set={setActiveTab} />
+                        <NavBtn id="debts" icon={<Icons.Exchange />} label="Debts" active={activeTab} set={setActiveTab} />
+                        <NavBtn id="assets" icon={<Icons.Briefcase />} label="Assets" active={activeTab} set={setActiveTab} />
+                    </div>
+                </div>
+            );
+        }
+
+        const NavBtn = ({ id, icon, label, active, set }) => (
+            <button onClick={() => set(id)} className={`flex flex-col items-center gap-1 w-16 transition-colors ${active === id ? 'text-primary' : 'text-slate-400'}`}>
+                <div className={`transition-all ${active === id ? 'bg-primary p-2 rounded-xl text-gold -translate-y-2 shadow-lg shadow-slate-300' : ''}`}>{icon}</div>
+                <span className={`text-[10px] font-bold ${active === id ? 'opacity-100' : 'opacity-80'}`}>{label}</span>
+            </button>
+        );
+
+        // 1. DASHBOARD TAB (WITH BACKUP)
+        function DashboardTab({ data, onBackup, onRestore }) {
+            const calcTotal = (arr, type, currency) => arr.filter(i => i.type === type && i.currency === currency).reduce((sum, i) => sum + (parseFloat(i.amount) - (parseFloat(i.paid)||0)), 0);
+            const assetKs = data.assets.filter(i => i.currency === 'Ks').reduce((sum, i) => sum + parseFloat(i.amount), 0);
+            const assetUsd = data.assets.filter(i => i.currency === '$').reduce((sum, i) => sum + parseFloat(i.amount), 0);
+            const lentKs = calcTotal(data.debts, 'lent', 'Ks');
+            const borrowedKs = calcTotal(data.debts, 'borrowed', 'Ks');
+            const lentUsd = calcTotal(data.debts, 'lent', '$');
+            const borrowedUsd = calcTotal(data.debts, 'borrowed', '$');
+            const netWorthKs = assetKs + (lentKs - borrowedKs);
+            const netWorthUsd = assetUsd + (lentUsd - borrowedUsd);
+
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            const thisMonthFlow = data.cashflow.filter(i => i.date.startsWith(currentMonth));
+            const income = thisMonthFlow.filter(i => i.type === 'income').reduce((sum, i) => sum + parseFloat(i.amount), 0);
+            const expense = thisMonthFlow.filter(i => i.type === 'expense').reduce((sum, i) => sum + parseFloat(i.amount), 0);
+
+            return (
+                <div className="space-y-5 animate-scaleIn pb-10">
+                    <div className="bg-primary text-white p-6 rounded-2xl shadow-xl shadow-slate-300 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-4 opacity-10"><Icons.Briefcase /></div>
+                        <h2 className="text-gold text-xs font-bold tracking-widest uppercase mb-4">Total Net Worth</h2>
+                        <div className="flex flex-col gap-4">
+                            <div><span className="text-3xl font-bold tracking-tight text-gold">{netWorthUsd.toLocaleString()}</span> <span className="text-slate-400 text-sm">$</span></div>
+                            <div className="w-full h-px bg-slate-700"></div>
+                            <div><span className="text-3xl font-bold tracking-tight">{netWorthKs.toLocaleString()}</span> <span className="text-slate-400 text-sm">Ks</span></div>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500">
+                            <div className="flex items-center gap-2 mb-2 text-green-600"><Icons.TrendingUp /><span className="text-xs font-bold">Income (This Month)</span></div>
+                            <span className="text-lg font-bold text-slate-700">${income.toLocaleString()}</span>
+                        </div>
+                        <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500">
+                            <div className="flex items-center gap-2 mb-2 text-red-600"><Icons.TrendingDown /><span className="text-xs font-bold">Expense (This Month)</span></div>
+                            <span className="text-lg font-bold text-slate-700">${expense.toLocaleString()}</span>
+                        </div>
+                    </div>
+
+                    {/* DATA BACKUP SECTION */}
+                    <div className="mt-6 pt-6 border-t border-slate-200">
+                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Data Backup (Lifetime Safe)</h3>
+                         <div className="grid grid-cols-2 gap-3">
+                            <button onClick={onBackup} className="bg-slate-800 text-white p-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-md">
+                                <Icons.Save className="text-gold" /> Save Backup
+                            </button>
+                            <label className="bg-white border border-slate-300 text-slate-700 p-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform shadow-sm hover:bg-slate-50">
+                                <Icons.Refresh className="text-primary" /> Restore Data
+                                <input type="file" accept=".json" onChange={onRestore} className="hidden" />
+                            </label>
+                         </div>
+                         <p className="text-[10px] text-slate-400 mt-2 text-center italic">
+                            * Save Backup regularly to keep your data safe forever.
+                         </p>
+                    </div>
+                </div>
+            );
+        }
+
+        // 2. CASHFLOW TAB
+        function CashflowTab({ data, onAdd, onDelete }) {
+            const [isOpen, setIsOpen] = useState(false);
+            const [form, setForm] = useState({ title: '', amount: '', type: 'expense' });
+            const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7));
+            
+            const filteredData = data.filter(item => item.date.startsWith(currentMonth));
+            const monthlyIncome = filteredData.filter(i => i.type === 'income').reduce((sum, i) => sum + parseFloat(i.amount), 0);
+            const monthlyExpense = filteredData.filter(i => i.type === 'expense').reduce((sum, i) => sum + parseFloat(i.amount), 0);
+            const monthlyBalance = monthlyIncome - monthlyExpense;
+
+            const changeMonth = (delta) => {
+                const date = new Date(currentMonth + '-01');
+                date.setMonth(date.getMonth() + delta);
+                setCurrentMonth(date.toISOString().slice(0, 7));
+            };
+            const formatMonth = (ym) => {
+                const [y, m] = ym.split('-');
+                const date = new Date(y, m - 1);
+                return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+            };
+
+            return (
+                <div className="pb-20">
+                    <div className="bg-white rounded-xl shadow-sm p-4 mb-5 border border-slate-100">
+                        <div className="flex justify-between items-center mb-4">
+                            <button onClick={() => changeMonth(-1)} className="p-2 text-slate-400 hover:text-primary bg-slate-50 rounded-full"><Icons.Left /></button>
+                            <div className="flex items-center gap-2 font-bold text-slate-700"><Icons.Calendar className="text-gold" />{formatMonth(currentMonth)}</div>
+                            <button onClick={() => changeMonth(1)} className="p-2 text-slate-400 hover:text-primary bg-slate-50 rounded-full"><Icons.Right /></button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                            <div className="bg-green-50 p-2 rounded-lg"><div className="text-[10px] text-green-600 font-bold uppercase">In</div><div className="font-bold text-green-700 text-sm">${monthlyIncome.toLocaleString()}</div></div>
+                            <div className="bg-red-50 p-2 rounded-lg"><div className="text-[10px] text-red-600 font-bold uppercase">Out</div><div className="font-bold text-red-700 text-sm">${monthlyExpense.toLocaleString()}</div></div>
+                            <div className="bg-slate-50 p-2 rounded-lg"><div className="text-[10px] text-slate-500 font-bold uppercase">Net</div><div className={`font-bold text-sm ${monthlyBalance >= 0 ? 'text-primary' : 'text-red-500'}`}>${monthlyBalance.toLocaleString()}</div></div>
+                        </div>
+                    </div>
+                    <div className="flex justify-between items-center mb-3 px-1"><h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Transactions</h2><button onClick={() => setIsOpen(true)} className="text-primary text-xs font-bold flex items-center gap-1">+ Add New</button></div>
+                    <div className="space-y-3">
+                        {filteredData.length === 0 ? ( <div className="text-center py-10 text-slate-400 text-sm">No transactions in this month.</div> ) : (
+                            filteredData.map(item => (
+                                <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border-l-4 border-transparent" style={{ borderLeftColor: item.type === 'income' ? '#22c55e' : '#ef4444' }}>
+                                    <div className="flex items-center gap-3"><div><h3 className="font-bold text-slate-700">{item.title}</h3><p className="text-[10px] text-slate-400">{new Date(item.date).getDate()} {formatMonth(currentMonth).split(' ')[0]}</p></div></div>
+                                    <div className="flex items-center gap-3"><span className={`font-bold ${item.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{item.type === 'income' ? '+' : '-'}${parseFloat(item.amount).toLocaleString()}</span><button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500"><Icons.Trash /></button></div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                    {isOpen && ( <Modal title="Add Transaction" onClose={() => setIsOpen(false)}><div className="space-y-3"><div className="flex bg-slate-100 p-1 rounded-lg"><button onClick={() => setForm({...form, type: 'income'})} className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${form.type === 'income' ? 'bg-green-500 text-white shadow-sm' : 'text-slate-500'}`}>Income</button><button onClick={() => setForm({...form, type: 'expense'})} className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${form.type === 'expense' ? 'bg-red-500 text-white shadow-sm' : 'text-slate-500'}`}>Expense</button></div><input placeholder="Title (e.g. Salary, Food)" className="w-full p-3 border rounded-xl" value={form.title} onChange={e => setForm({...form, title: e.target.value})} /><input type="number" placeholder="Amount ($)" className="w-full p-3 border rounded-xl" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} /><button onClick={() => { if(form.title && form.amount) { onAdd(form); setIsOpen(false); setForm({title:'', amount:'', type:'expense'}); }}} className="w-full bg-primary text-gold py-3 rounded-xl font-bold mt-2">Save Record</button></div></Modal> )}
+                </div>
+            );
+        }
+
+        // 3. DEBTS TAB
+        function DebtsTab({ data, onAdd, onDelete, onPay }) {
+            const [view, setView] = useState('lent');
+            const [isOpen, setIsOpen] = useState(false);
+            const [payModal, setPayModal] = useState(null);
+            const [payAmount, setPayAmount] = useState('');
+            const [form, setForm] = useState({ name: '', amount: '', currency: 'Ks', type: 'lent', status: 'active' });
+            const filtered = data.filter(i => i.type === view);
+            return (
+                <div className="pb-20">
+                    <div className="flex bg-white p-1 rounded-xl shadow-sm mb-4"><button onClick={() => setView('lent')} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${view === 'lent' ? 'bg-green-100 text-green-700' : 'text-slate-400'}`}>ရရန်ရှိ (Lent)</button><button onClick={() => setView('borrowed')} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${view === 'borrowed' ? 'bg-red-100 text-red-700' : 'text-slate-400'}`}>ပေးရန်ရှိ (Borrowed)</button></div>
+                    <div className="space-y-3">
+                        {filtered.map(item => {
+                            const paid = parseFloat(item.paid) || 0; const total = parseFloat(item.amount); const remaining = total - paid; const percent = Math.min(100, (paid / total) * 100);
+                            return (
+                                <div key={item.id} className={`bg-white p-4 rounded-xl shadow-sm border-l-4 ${item.status === 'completed' ? 'border-slate-300 opacity-70' : (view==='lent'?'border-green-500':'border-red-500')}`}>
+                                    <div className="flex justify-between items-start mb-2"><div><h3 className="font-bold text-slate-700">{item.name}</h3><p className="text-[10px] text-slate-400">{new Date(item.date).toLocaleDateString()}</p></div><div className="text-right"><span className={`font-bold text-lg ${view==='lent'?'text-green-600':'text-red-600'}`}>{total.toLocaleString()} <span className="text-xs">{item.currency}</span></span></div></div>
+                                    <div className="w-full h-2 bg-slate-100 rounded-full mb-2 overflow-hidden"><div className="h-full bg-gold transition-all duration-500" style={{width: `${percent}%`}}></div></div>
+                                    <div className="flex justify-between items-center"><span className="text-xs font-bold text-slate-500">Rem: {remaining.toLocaleString()} {item.currency}</span><div className="flex gap-2"><button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500"><Icons.Trash /></button>{item.status !== 'completed' ? ( <button onClick={() => setPayModal(item.id)} className="px-3 py-1 bg-slate-800 text-white text-[10px] font-bold rounded-lg active:scale-95">{view === 'lent' ? '+ Receive' : '+ Pay'}</button> ) : ( <span className="text-xs font-bold text-green-600 flex items-center gap-1"><Icons.Check className="w-3 h-3"/> Done</span> )}</div></div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                    <button onClick={() => { setForm({...form, type: view}); setIsOpen(true); }} className="fixed bottom-24 right-4 bg-primary text-gold h-14 w-14 rounded-full shadow-xl flex items-center justify-center animate-bounce z-20"><Icons.Plus /></button>
+                    {isOpen && ( <Modal title={view === 'lent' ? "Add Receivable" : "Add Payable"} onClose={() => setIsOpen(false)}><div className="space-y-3"><input placeholder="Person Name" className="w-full p-3 border rounded-xl" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /><div className="flex gap-2"><input type="number" placeholder="Total Amount" className="flex-1 p-3 border rounded-xl" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} /><select className="w-20 p-3 border rounded-xl bg-slate-50 font-bold" value={form.currency} onChange={e => setForm({...form, currency: e.target.value})}><option value="Ks">Ks</option><option value="$">$</option></select></div><button onClick={() => { if(form.name && form.amount) { onAdd(form); setIsOpen(false); setForm({name:'', amount:'', currency:'Ks', type:view, status:'active'}); }}} className="w-full bg-primary text-gold py-3 rounded-xl font-bold mt-2">Save</button></div></Modal> )}
+                    {payModal && ( <Modal title="Add Payment" onClose={() => {setPayModal(null); setPayAmount('')}}><div className="space-y-3"><p className="text-sm text-slate-500">Enter amount paid/received:</p><input type="number" placeholder="Amount" className="w-full p-3 border rounded-xl" value={payAmount} onChange={e => setPayAmount(e.target.value)} /><button onClick={() => { if(payAmount) { onPay(payModal, payAmount); setPayModal(null); setPayAmount(''); }}} className="w-full bg-green-600 text-white py-3 rounded-xl font-bold mt-2">Confirm Payment</button></div></Modal> )}
+                </div>
+            );
+        }
+
+        // 4. ASSETS TAB
+        function AssetsTab({ data, onAdd, onDelete }) {
+            const [isOpen, setIsOpen] = useState(false);
+            const [form, setForm] = useState({ name: '', amount: '', currency: 'Ks', category: 'Cash' });
+            const categories = ['Cash', 'Investment', 'Property'];
+            return (
+                <div className="pb-20">
+                    <div className="flex justify-between items-end mb-4"><h2 className="text-lg font-bold text-primary">Your Assets</h2><button onClick={() => setIsOpen(true)} className="bg-primary text-gold px-4 py-2 rounded-lg text-xs font-bold shadow-md active:scale-95 transition-transform">+ Add Asset</button></div>
+                    <div className="space-y-4">
+                        {categories.map(cat => {
+                            const items = data.filter(i => i.category === cat);
+                            if (items.length === 0) return null;
+                            return (
+                                <div key={cat}>
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{cat}</h3>
+                                    <div className="space-y-2">
+                                        {items.map(item => (
+                                            <div key={item.id} className="bg-white p-3 rounded-xl shadow-sm flex justify-between items-center border border-slate-100">
+                                                <div><h4 className="font-bold text-slate-700">{item.name}</h4><p className="text-[10px] text-slate-400">{new Date(item.date).toLocaleDateString()}</p></div>
+                                                <div className="flex items-center gap-3"><span className="font-bold text-primary">{parseFloat(item.amount).toLocaleString()} <span className="text-xs">{item.currency}</span></span><button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500"><Icons.Trash /></button></div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                    {isOpen && ( <Modal title="Add Asset" onClose={() => setIsOpen(false)}><div className="space-y-3"><div className="flex bg-slate-100 p-1 rounded-lg">{categories.map(cat => (<button key={cat} onClick={() => setForm({...form, category: cat})} className={`flex-1 py-2 rounded-md text-[10px] font-bold transition-all ${form.category === cat ? 'bg-white text-primary shadow-sm' : 'text-slate-500'}`}>{cat}</button>))}</div><input placeholder="Name (e.g. DBS Bank, Condo)" className="w-full p-3 border rounded-xl" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /><div className="flex gap-2"><input type="number" placeholder="Value" className="flex-1 p-3 border rounded-xl" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} /><select className="w-20 p-3 border rounded-xl bg-slate-50 font-bold" value={form.currency} onChange={e => setForm({...form, currency: e.target.value})}><option value="Ks">Ks</option><option value="$">$</option></select></div><button onClick={() => { if(form.name && form.amount) { onAdd(form); setIsOpen(false); setForm({name:'', amount:'', currency:'Ks', category:'Cash'}); }}} className="w-full bg-primary text-gold py-3 rounded-xl font-bold mt-2">Save Asset</button></div></Modal> )}
+                </div>
+            );
+        }
+
+        const Modal = ({ title, children, onClose }) => (
+            <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+                <div className="bg-white w-full max-w-xs rounded-2xl shadow-2xl animate-scaleIn">
+                    <div className="p-4 border-b flex justify-between items-center"><h3 className="font-bold text-primary">{title}</h3><button onClick={onClose}><Icons.Trash className="w-5 h-5 text-slate-300 hover:text-red-500 rotate-45 transition-colors" /></button></div>
+                    <div className="p-4">{children}</div>
+                </div>
+            </div>
+        );
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
