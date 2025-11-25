@@ -2,10 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance Master V2.5</title>
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <link rel="icon" type="image/png" href="icon-192.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Finance Master V2.5 (Pro Teal)</title>
     <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,10 +15,11 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#0f172a', 
-                        primaryLight: '#1e293b', 
-                        gold: '#f59e0b', 
-                        goldLight: '#fcd34d', 
+                        primary: '#0f766e', // Deep Teal
+                        primaryLight: '#ccfbf1', 
+                        primaryDark: '#115e59', 
+                        bgSoft: '#f8fafc', // Slate 50
+                        slateDark: '#334155', 
                     }
                 }
             }
@@ -30,7 +29,7 @@
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        input:focus, select:focus, textarea:focus { outline: 2px solid #f59e0b; outline-offset: 1px; }
+        input:focus, select:focus, textarea:focus { outline: 2px solid #0f766e; outline-offset: 1px; }
         .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
     </style>
 </head>
@@ -40,13 +39,23 @@
     <script type="text/babel">
         const { useState, useEffect, Component } = React;
 
-        // --- ICONS ---
+        // --- PROFESSIONAL ICONS SET ---
         const Icon = ({ d, className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d={d} /></svg>;
+        
         const Icons = {
-            Wallet: () => <Icon d="M20 12V8H6a2 2 0 0 1-2-2 2 2 0 0 1 2-2h12v4" className="w-5 h-5" />,
-            Exchange: () => <Icon d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3" className="w-5 h-5" />,
+            // Summary: Dashboard Grid 
+            PieChart: () => <Icon d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" className="w-5 h-5" />,
+            
+            // Cashflow: Transaction List/Document
+            Wallet: () => <Icon d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" className="w-5 h-5" />,
+            
+            // Debts: Handshake (Agreement)
+            Exchange: () => <Icon d="M20.66 12L18.06 14.6a2.828 2.828 0 0 1-4 0l-3.34-3.34a2.828 2.828 0 0 0-4 0L4.06 13.94a2.828 2.828 0 1 0 4 4l2.66-2.66 2.6 2.6a2.828 2.828 0 1 0 4-4l-3.34-3.34a2.828 2.828 0 0 1 4 0l2.68 2.68" className="w-6 h-6" />,
+            
+            // Assets: Briefcase (Portfolio)
             Briefcase: () => <Icon d="M20 7h-4V4c0-1.1-.9-2-2-2h-4C9 2 8 2.9 8 4v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2z" className="w-5 h-5" />,
-            PieChart: () => <Icon d="M21.21 15.89A10 10 0 1 1 8 2.83" className="w-5 h-5" />,
+
+            // UI Utility Icons
             Plus: () => <Icon d="M12 5v14M5 12h14" className="w-5 h-5" />,
             Trash: () => <Icon d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" className="w-5 h-5" />,
             Edit: () => <Icon d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" className="w-5 h-5" />,
@@ -64,7 +73,6 @@
         // --- DATA & HELPERS ---
         const DATA_KEY = 'finance_master_v1';
 
-        // 1. SAFE CALCULATOR
         const calculateSafe = (val) => {
             try {
                 const str = String(val || '').replace(/[^0-9.+\-]/g, ''); 
@@ -76,23 +84,20 @@
             } catch { return 0; }
         };
 
-        // 2. SAFE NUMBER
         const safeNum = (val) => {
             const num = parseFloat(val);
             return isFinite(num) ? num : 0;
         };
 
-        // 3. DATA CLEANER
         const loadData = () => {
             try {
                 const raw = localStorage.getItem(DATA_KEY);
                 if (!raw) return { cashflow: [], debts: [], assets: [] };
                 const parsed = JSON.parse(raw);
-                // Deep clean to prevent crashes
                 const clean = (arr) => (Array.isArray(arr) ? arr.map(i => ({
                     ...i, 
                     id: i.id || Date.now(),
-                    date: i.date || new Date().toISOString(), // Ensure Date exists!
+                    date: i.date || new Date().toISOString(),
                     amount: safeNum(i.amount), 
                     paid: safeNum(i.paid)
                 })) : []);
@@ -100,7 +105,6 @@
             } catch { return { cashflow: [], debts: [], assets: [] }; }
         };
 
-        // --- ERROR BOUNDARY ---
         class ErrorBoundary extends Component {
             constructor(props) { super(props); this.state = { hasError: false }; }
             static getDerivedStateFromError(error) { return { hasError: true }; }
@@ -109,9 +113,7 @@
                     return (
                         <div className="h-screen flex flex-col items-center justify-center p-6 text-center bg-white">
                             <h1 className="text-xl font-bold text-red-600 mb-2">App Paused</h1>
-                            <p className="text-sm text-slate-500 mb-4">Don't worry, data is safe. Just reload.</p>
                             <button onClick={() => window.location.reload()} className="bg-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg w-full">Reload App</button>
-                            <button onClick={() => { localStorage.removeItem(DATA_KEY); window.location.reload(); }} className="mt-4 text-red-500 text-xs underline">Factory Reset</button>
                         </div>
                     );
                 }
@@ -131,20 +133,14 @@
             const addEntry = (key, item) => {
                 const finalAmt = calculateSafe(item.amount); 
                 const newItem = key === 'debts' ? { ...item, amount: finalAmt, paid: 0 } : { ...item, amount: finalAmt };
-                // Add new item with ID and Date
                 setData(prev => ({ ...prev, [key]: [{ ...newItem, id: Date.now(), date: new Date().toISOString() }, ...(prev[key]||[])] }));
             };
 
-            // *** THE FIX IS HERE ***
             const updateEntry = (key, updatedItem) => {
                 const finalAmt = calculateSafe(updatedItem.amount);
                 setData(prev => ({
                     ...prev,
-                    [key]: prev[key].map(i => 
-                        i.id === updatedItem.id 
-                        ? { ...i, ...updatedItem, amount: finalAmt } // Keep original properties (like date) using ...i
-                        : i
-                    )
+                    [key]: prev[key].map(i => i.id === updatedItem.id ? { ...i, ...updatedItem, amount: finalAmt } : i)
                 }));
             };
 
@@ -165,7 +161,6 @@
                 }));
             };
 
-            // Backup / Restore
             const handleBackup = () => {
                 const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
                 const link = document.createElement('a');
@@ -181,10 +176,7 @@
                     try {
                         const content = JSON.parse(ev.target.result);
                         if(content.cashflow) {
-                            if(confirm("Restore backup?")) {
-                                setData(content);
-                                setTimeout(() => alert("Restored!"), 100);
-                            }
+                            if(confirm("Restore backup?")) { setData(content); setTimeout(() => alert("Restored!"), 100); }
                         } else alert("Invalid file");
                     } catch { alert("Error"); }
                 };
@@ -192,11 +184,11 @@
             };
 
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-slate-50 pb-24 text-slate-800">
-                    <div className="bg-primary text-white p-5 sticky top-0 z-40 shadow-lg shadow-slate-200">
+                <div className="max-w-md mx-auto min-h-screen bg-bgSoft pb-24 text-slate-800">
+                    <div className="bg-primary text-white p-5 sticky top-0 z-40 shadow-md">
                         <div className="flex justify-between items-center">
-                            <div><h1 className="text-xl font-bold tracking-tight text-gold">Finance Master</h1><p className="text-xs text-slate-400">Manage your wealth</p></div>
-                            <div className="h-8 w-8 bg-slate-700 rounded-full flex items-center justify-center text-gold font-bold">Z</div>
+                            <div><h1 className="text-xl font-bold tracking-tight text-white">Finance Master</h1><p className="text-xs text-primaryLight opacity-90">Manage your wealth</p></div>
+                            <div className="h-8 w-8 bg-white/10 rounded-full flex items-center justify-center text-white font-bold backdrop-blur-sm">Z</div>
                         </div>
                     </div>
 
@@ -219,7 +211,7 @@
 
         const NavBtn = ({ id, icon, label, active, set }) => (
             <button onClick={() => set(id)} className={`flex flex-col items-center gap-1 w-16 transition-colors ${active === id ? 'text-primary' : 'text-slate-400'}`}>
-                <div className={`transition-all ${active === id ? 'bg-primary p-2 rounded-xl text-gold -translate-y-2 shadow-lg shadow-slate-300' : ''}`}>{icon}</div>
+                <div className={`transition-all ${active === id ? 'bg-primary p-2 rounded-xl text-white -translate-y-2 shadow-lg shadow-primary/30' : ''}`}>{icon}</div>
                 <span className={`text-[10px] font-bold ${active === id ? 'opacity-100' : 'opacity-80'}`}>{label}</span>
             </button>
         );
@@ -247,13 +239,13 @@
 
             return (
                 <div className="space-y-5 animate-scaleIn pb-10">
-                    <div className="bg-primary text-white p-6 rounded-2xl shadow-xl relative overflow-hidden">
+                    <div className="bg-primary text-white p-6 rounded-2xl shadow-xl shadow-primary/20 relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-10"><Icons.Briefcase /></div>
-                        <h2 className="text-gold text-xs font-bold tracking-widest uppercase mb-4">Total Net Worth</h2>
+                        <h2 className="text-white text-xs font-bold tracking-widest uppercase mb-4 opacity-80">Total Net Worth</h2>
                         <div className="flex flex-col gap-4">
-                            <div><span className="text-3xl font-bold tracking-tight text-gold">{netWorthUsd.toLocaleString()}</span> <span className="text-slate-400 text-sm">$</span></div>
-                            <div className="w-full h-px bg-slate-700"></div>
-                            <div><span className="text-3xl font-bold tracking-tight">{netWorthKs.toLocaleString()}</span> <span className="text-slate-400 text-sm">Ks</span></div>
+                            <div><span className="text-3xl font-bold tracking-tight text-white">{netWorthUsd.toLocaleString()}</span> <span className="text-primaryLight text-sm">$</span></div>
+                            <div className="w-full h-px bg-white/20"></div>
+                            <div><span className="text-3xl font-bold tracking-tight text-white">{netWorthKs.toLocaleString()}</span> <span className="text-primaryLight text-sm">Ks</span></div>
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -266,14 +258,14 @@
                             <span className="text-lg font-bold text-slate-700">${expense.toLocaleString()}</span>
                         </div>
                     </div>
-                    <div className={`p-4 rounded-xl shadow-sm border-l-4 flex justify-between items-center ${balance >= 0 ? 'bg-slate-800 border-gold text-white' : 'bg-red-50 border-red-600 text-red-800'}`}>
+                    <div className={`p-4 rounded-xl shadow-sm border-l-4 flex justify-between items-center ${balance >= 0 ? 'bg-slate-800 border-primary text-white' : 'bg-red-50 border-red-600 text-red-800'}`}>
                         <div><h3 className="text-xs font-bold uppercase tracking-widest opacity-80">Monthly Balance</h3><p className="text-xs opacity-60">Income - Expense</p></div>
                         <span className="text-2xl font-bold">${balance.toLocaleString()}</span>
                     </div>
                     <div className="mt-6 pt-6 border-t border-slate-200">
                          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Data Backup</h3>
                          <div className="grid grid-cols-2 gap-3">
-                            <button onClick={onBackup} className="bg-slate-800 text-white p-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-md"><Icons.Save className="text-gold" /> Save Backup</button>
+                            <button onClick={onBackup} className="bg-slate-800 text-white p-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-md"><Icons.Save className="text-primary" /> Save Backup</button>
                             <label className="bg-white border border-slate-300 text-slate-700 p-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform shadow-sm hover:bg-slate-50"><Icons.Refresh className="text-primary" /> Restore Data<input type="file" accept=".json" onChange={onRestore} className="hidden" /></label>
                          </div>
                     </div>
@@ -319,7 +311,7 @@
                     <div className="bg-white rounded-xl shadow-sm p-4 mb-5 border border-slate-100">
                         <div className="flex justify-between items-center mb-4">
                             <button onClick={() => changeMonth(-1)} className="p-2 text-slate-400 hover:text-primary bg-slate-50 rounded-full"><Icons.Left /></button>
-                            <div className="flex items-center gap-2 font-bold text-slate-700"><Icons.Calendar className="text-gold" />{formatMonth(currentMonth)}</div>
+                            <div className="flex items-center gap-2 font-bold text-slate-700"><Icons.Calendar className="text-primary" />{formatMonth(currentMonth)}</div>
                             <button onClick={() => changeMonth(1)} className="p-2 text-slate-400 hover:text-primary bg-slate-50 rounded-full"><Icons.Right /></button>
                         </div>
                         <div className="grid grid-cols-3 gap-2 text-center">
@@ -344,8 +336,8 @@
                         )}
                     </div>
                     {isOpen && ( <Modal title={form.id ? "Edit Transaction" : "Add Transaction"} onClose={() => setIsOpen(false)}><div className="space-y-3"><div className="flex bg-slate-100 p-1 rounded-lg"><button onClick={() => setForm({...form, type: 'income'})} className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${form.type === 'income' ? 'bg-green-500 text-white shadow-sm' : 'text-slate-500'}`}>Income</button><button onClick={() => setForm({...form, type: 'expense'})} className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${form.type === 'expense' ? 'bg-red-500 text-white shadow-sm' : 'text-slate-500'}`}>Expense</button></div><input placeholder="Title (e.g. Salary, Food)" className="w-full p-3 border rounded-xl" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
-                    <input type="text" inputMode="text" placeholder="Amount ($) e.g. 100+50" className="w-full p-3 border rounded-xl" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} />
-                    <p className="text-[10px] text-slate-400">Tip: Use 100+50 for auto-sum.</p><button onClick={handleSubmit} className="w-full bg-primary text-gold py-3 rounded-xl font-bold mt-2">Save Record</button></div></Modal> )}
+                    <input type="text" inputMode="decimal" placeholder="Amount ($) e.g. 100+50" className="w-full p-3 border rounded-xl" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} />
+                    <p className="text-[10px] text-slate-400">Tip: Use 100+50 for auto-sum.</p><button onClick={handleSubmit} className="w-full bg-primary text-white py-3 rounded-xl font-bold mt-2">Save Record</button></div></Modal> )}
                 </div>
             );
         }
@@ -379,15 +371,15 @@
                             return (
                                 <div key={item.id} className={`bg-white p-4 rounded-xl shadow-sm border-l-4 ${item.status === 'completed' ? 'border-slate-300 opacity-70' : (view==='lent'?'border-green-500':'border-red-500')}`}>
                                     <div className="flex justify-between items-start mb-2"><div><h3 className="font-bold text-slate-700">{item.name}</h3><p className="text-[10px] text-slate-400">{item.date ? new Date(item.date).toLocaleDateString() : '-'}</p>{item.note && <p className="text-xs text-slate-500 italic mt-1 bg-slate-50 p-1 rounded inline-block">"{item.note}"</p>}</div><div className="text-right"><span className={`font-bold text-lg ${view==='lent'?'text-green-600':'text-red-600'}`}>{total.toLocaleString()} <span className="text-xs">{item.currency}</span></span></div></div>
-                                    <div className="w-full h-2 bg-slate-100 rounded-full mb-2 overflow-hidden"><div className="h-full bg-gold transition-all duration-500" style={{width: `${percent}%`}}></div></div>
+                                    <div className="w-full h-2 bg-slate-100 rounded-full mb-2 overflow-hidden"><div className={`h-full transition-all duration-500 ${view==='lent'?'bg-green-500':'bg-red-500'}`} style={{width: `${percent}%`}}></div></div>
                                     <div className="flex justify-between items-center"><span className="text-xs font-bold text-slate-500">Rem: {remaining.toLocaleString()} {item.currency}</span><div className="flex gap-2"><button onClick={() => handleEdit(item)} className="text-slate-300 hover:text-primary"><Icons.Pencil /></button><button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500"><Icons.Trash /></button>{item.status !== 'completed' ? ( <button onClick={() => setPayModal(item.id)} className="px-3 py-1 bg-slate-800 text-white text-[10px] font-bold rounded-lg active:scale-95">{view === 'lent' ? '+ Receive' : '+ Pay'}</button> ) : ( <span className="text-xs font-bold text-green-600 flex items-center gap-1"><Icons.Check className="w-3 h-3"/> Done</span> )}</div></div>
                                 </div>
                             )
                         })}
                     </div>
-                    <button onClick={() => { setForm({...form, type: view, id: null, name: '', amount: '', note: ''}); setIsOpen(true); }} className="fixed bottom-24 right-4 bg-primary text-gold h-14 w-14 rounded-full shadow-xl flex items-center justify-center animate-bounce z-20"><Icons.Plus /></button>
-                    {isOpen && ( <Modal title={form.id ? "Edit Debt" : (view === 'lent' ? "Add Receivable" : "Add Payable")} onClose={() => setIsOpen(false)}><div className="space-y-3"><input placeholder="Person Name" className="w-full p-3 border rounded-xl" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /><textarea placeholder="Note" className="w-full p-3 border rounded-xl" rows="2" value={form.note} onChange={e => setForm({...form, note: e.target.value})}></textarea><div className="flex gap-2"><input type="text" inputMode="text" placeholder="Total Amount" className="flex-1 p-3 border rounded-xl" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} /><select className="w-20 p-3 border rounded-xl bg-slate-50 font-bold" value={form.currency} onChange={e => setForm({...form, currency: e.target.value})}><option value="Ks">Ks</option><option value="$">$</option></select></div><button onClick={handleSubmit} className="w-full bg-primary text-gold py-3 rounded-xl font-bold mt-2">Save</button></div></Modal> )}
-                    {payModal && ( <Modal title="Add Payment" onClose={() => {setPayModal(null); setPayAmount('')}}><div className="space-y-3"><p className="text-sm text-slate-500">Enter amount paid/received:</p><input type="number" placeholder="Amount" className="w-full p-3 border rounded-xl" value={payAmount} onChange={e => setPayAmount(e.target.value)} /><button onClick={() => { if(payAmount) { onPay(payModal, payAmount); setPayModal(null); setPayAmount(''); }}} className="w-full bg-green-600 text-white py-3 rounded-xl font-bold mt-2">Confirm Payment</button></div></Modal> )}
+                    <button onClick={() => { setForm({...form, type: view, id: null, name: '', amount: '', note: ''}); setIsOpen(true); }} className="fixed bottom-24 right-4 bg-primary text-white h-14 w-14 rounded-full shadow-xl shadow-primary/30 flex items-center justify-center animate-bounce z-20"><Icons.Plus /></button>
+                    {isOpen && ( <Modal title={form.id ? "Edit Debt" : (view === 'lent' ? "Add Receivable" : "Add Payable")} onClose={() => setIsOpen(false)}><div className="space-y-3"><input placeholder="Person Name" className="w-full p-3 border rounded-xl" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /><textarea placeholder="Note" className="w-full p-3 border rounded-xl" rows="2" value={form.note} onChange={e => setForm({...form, note: e.target.value})}></textarea><div className="flex gap-2"><input type="text" inputMode="decimal" placeholder="Total Amount" className="flex-1 p-3 border rounded-xl" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} /><select className="w-20 p-3 border rounded-xl bg-slate-50 font-bold" value={form.currency} onChange={e => setForm({...form, currency: e.target.value})}><option value="Ks">Ks</option><option value="$">$</option></select></div><button onClick={handleSubmit} className="w-full bg-primary text-white py-3 rounded-xl font-bold mt-2">Save</button></div></Modal> )}
+                    {payModal && ( <Modal title="Add Payment" onClose={() => {setPayModal(null); setPayAmount('')}}><div className="space-y-3"><p className="text-sm text-slate-500">Enter amount paid/received:</p><input type="number" inputMode="decimal" placeholder="Amount" className="w-full p-3 border rounded-xl" value={payAmount} onChange={e => setPayAmount(e.target.value)} /><button onClick={() => { if(payAmount) { onPay(payModal, payAmount); setPayModal(null); setPayAmount(''); }}} className="w-full bg-green-600 text-white py-3 rounded-xl font-bold mt-2">Confirm Payment</button></div></Modal> )}
                 </div>
             );
         }
@@ -411,7 +403,7 @@
 
             return (
                 <div className="pb-20">
-                    <div className="flex justify-between items-end mb-4"><h2 className="text-lg font-bold text-primary">Your Assets</h2><button onClick={() => {setForm({id:null, name:'', amount:'', currency:'Ks', category:'Cash'}); setIsOpen(true);}} className="bg-primary text-gold px-4 py-2 rounded-lg text-xs font-bold shadow-md active:scale-95 transition-transform">+ Add Asset</button></div>
+                    <div className="flex justify-between items-end mb-4"><h2 className="text-lg font-bold text-primary">Your Assets</h2><button onClick={() => {setForm({id:null, name:'', amount:'', currency:'Ks', category:'Cash'}); setIsOpen(true);}} className="bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md active:scale-95 transition-transform">+ Add Asset</button></div>
                     <div className="space-y-4">
                         {categories.map(cat => {
                             const items = data.filter(i => i.category === cat);
@@ -431,7 +423,7 @@
                             )
                         })}
                     </div>
-                    {isOpen && ( <Modal title={form.id ? "Edit Asset" : "Add Asset"} onClose={() => setIsOpen(false)}><div className="space-y-3"><div className="flex bg-slate-100 p-1 rounded-lg">{categories.map(cat => (<button key={cat} onClick={() => setForm({...form, category: cat})} className={`flex-1 py-2 rounded-md text-[10px] font-bold transition-all ${form.category === cat ? 'bg-white text-primary shadow-sm' : 'text-slate-500'}`}>{cat}</button>))}</div><input placeholder="Name" className="w-full p-3 border rounded-xl" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /><div className="flex gap-2"><input type="text" placeholder="Value" className="flex-1 p-3 border rounded-xl" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} /><select className="w-20 p-3 border rounded-xl bg-slate-50 font-bold" value={form.currency} onChange={e => setForm({...form, currency: e.target.value})}><option value="Ks">Ks</option><option value="$">$</option></select></div><button onClick={handleSubmit} className="w-full bg-primary text-gold py-3 rounded-xl font-bold mt-2">Save Asset</button></div></Modal> )}
+                    {isOpen && ( <Modal title={form.id ? "Edit Asset" : "Add Asset"} onClose={() => setIsOpen(false)}><div className="space-y-3"><div className="flex bg-slate-100 p-1 rounded-lg">{categories.map(cat => (<button key={cat} onClick={() => setForm({...form, category: cat})} className={`flex-1 py-2 rounded-md text-[10px] font-bold transition-all ${form.category === cat ? 'bg-white text-primary shadow-sm' : 'text-slate-500'}`}>{cat}</button>))}</div><input placeholder="Name" className="w-full p-3 border rounded-xl" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /><div className="flex gap-2"><input type="text" inputMode="decimal" placeholder="Value" className="flex-1 p-3 border rounded-xl" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} /><select className="w-20 p-3 border rounded-xl bg-slate-50 font-bold" value={form.currency} onChange={e => setForm({...form, currency: e.target.value})}><option value="Ks">Ks</option><option value="$">$</option></select></div><button onClick={handleSubmit} className="w-full bg-primary text-white py-3 rounded-xl font-bold mt-2">Save Asset</button></div></Modal> )}
                 </div>
             );
         }
