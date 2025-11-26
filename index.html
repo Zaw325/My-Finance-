@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Finance Master V7.6 (Clean & Restore)</title>
+    <title>Finance Master V8 (Cloud Sync)</title>
     <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -43,9 +43,30 @@
 <body class="transition-colors duration-300">
     <div id="root"></div>
 
-    <script type="text/babel">
+    <script type="text/babel" data-type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
         const { useState, useEffect, useMemo, Component } = React;
-        const DATA_KEY = 'finance_master_final_v76'; // Final Stable Key
+
+        // --- FIREBASE CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDyuCbPWKCcWYqPCcxW92wE2nZFUu_hC-c",
+            authDomain: "mrs-sparkles-qc-app.firebaseapp.com",
+            projectId: "mrs-sparkles-qc-app",
+            storageBucket: "mrs-sparkles-qc-app.firebasestorage.app",
+            messagingSenderId: "692678390922",
+            appId: "1:692678390922:web:0e0ada716c87fe02b0a973"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        const DATA_KEY = 'finance_master_v8_backup';
 
         // --- ICONS ---
         const Icon = ({ d, className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d={d} /></svg>;
@@ -64,16 +85,18 @@
             Right: () => <Icon d="M9 18l6-6-6-6" className="w-5 h-5" />,
             Lock: () => <Icon d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" className="w-5 h-5" />,
             Moon: () => <Icon d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" className="w-5 h-5" />,
-            Sun: () => <Icon d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" className="w-5 h-5" />,
             Settings: () => <Icon d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" className="w-5 h-5" />,
+            Cloud: () => <Icon d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" className="w-5 h-5" />,
+            CloudCheck: () => <Icon d="M20 6L9 17l-5-5" className="w-5 h-5" />,
+            Upload: () => <Icon d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" className="w-5 h-5" />,
             Download: () => <Icon d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" className="w-5 h-5" />,
-            Refresh: () => <Icon d="M23 4v6h-6M1 20v-6h6" className="w-5 h-5" />,
+            Google: () => <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81z"/></svg>
         };
 
         const safeNum = (val) => { const num = parseFloat(val); return isFinite(num) ? num : 0; };
         const calculateSafe = (val) => { try { return String(val||'').replace(/[^0-9.+\-]/g, '').split('+').reduce((sum, part) => sum + (parseFloat(part)||0), 0); } catch { return 0; } };
 
-        const loadData = () => {
+        const loadLocalData = () => {
             try {
                 const raw = localStorage.getItem(DATA_KEY);
                 if (!raw) return { cashflow: [], debts: [], assets: [], settings: { budget: 0, darkMode: false, pin: null } };
@@ -94,19 +117,85 @@
         }
 
         function App() {
-            const [data, setData] = useState(loadData);
+            const [data, setData] = useState(loadLocalData);
+            const [user, setUser] = useState(null);
             const [activeTab, setActiveTab] = useState('dashboard');
             const [isLocked, setIsLocked] = useState(!!(data.settings && data.settings.pin));
             const [showSettings, setShowSettings] = useState(false);
             const [darkMode, setDarkMode] = useState(data.settings ? data.settings.darkMode : false);
+            const [syncStatus, setSyncStatus] = useState('idle'); // idle, syncing, success, error
 
+            // --- AUTH & SYNC LOGIC ---
             useEffect(() => {
+                const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+                    setUser(currentUser);
+                    if (currentUser) {
+                        // On Login: Fetch cloud data and merge/overwrite
+                        setSyncStatus('syncing');
+                        try {
+                            const docRef = doc(db, "users", currentUser.uid);
+                            const docSnap = await getDoc(docRef);
+                            if (docSnap.exists()) {
+                                const cloudData = docSnap.data();
+                                // Optional: Ask user to merge? For now, we prefer cloud data if it exists, or local if newer. 
+                                // Simple strategy: If cloud exists, use it.
+                                setData(cloudData);
+                                console.log("Data restored from Cloud");
+                            } else {
+                                // New user on cloud, save local data to cloud
+                                await setDoc(docRef, data);
+                            }
+                            setSyncStatus('success');
+                        } catch (e) {
+                            console.error("Sync Error", e);
+                            setSyncStatus('error');
+                        }
+                    }
+                });
+                return () => unsubscribe();
+            }, []);
+
+            // --- AUTO SAVE TO LOCAL & CLOUD ---
+            useEffect(() => {
+                // 1. Save Local Immediate
                 const newData = { ...data, settings: { ...data.settings, darkMode } };
                 localStorage.setItem(DATA_KEY, JSON.stringify(newData));
+
+                // 2. Theme Toggle
                 if (darkMode) document.documentElement.classList.add('dark');
                 else document.documentElement.classList.remove('dark');
-            }, [data, darkMode]);
 
+                // 3. Auto-Save to Cloud (Debounced)
+                if (user) {
+                    setSyncStatus('syncing');
+                    const timeoutId = setTimeout(async () => {
+                        try {
+                            await setDoc(doc(db, "users", user.uid), newData);
+                            setSyncStatus('success');
+                        } catch (error) {
+                            console.error("Cloud Save Failed", error);
+                            setSyncStatus('error');
+                        }
+                    }, 2000); // Wait 2s after last change
+                    return () => clearTimeout(timeoutId);
+                }
+            }, [data, darkMode, user]);
+
+            const handleLogin = async () => {
+                try {
+                    await signInWithPopup(auth, provider);
+                } catch (error) {
+                    alert("Login Failed: " + error.message);
+                }
+            };
+
+            const handleLogout = async () => {
+                await signOut(auth);
+                // Optional: Clear local data on logout? For now, keep it.
+                alert("Logged out. Local data is safe.");
+            };
+
+            // --- CRUD ACTIONS ---
             const addEntry = (key, item) => {
                 const finalAmt = calculateSafe(item.amount);
                 const newItem = key === 'debts' ? { ...item, amount: finalAmt, paid: 0, status: 'active' } : { ...item, amount: finalAmt };
@@ -132,44 +221,31 @@
             const deleteEntry = (key, id) => { if(confirm("Delete?")) setData(prev => ({ ...prev, [key]: prev[key].filter(i => i.id !== id) })); };
             const updateSettings = (newSettings) => setData(prev => ({ ...prev, settings: { ...prev.settings, ...newSettings } }));
             
-            const handleSetPin = (pin) => {
-                setData(prev => ({ ...prev, settings: { ...prev.settings, pin: pin } }));
-                setShowSettings(false);
-                alert(pin ? "PIN Set!" : "PIN Removed!");
-            };
-
-            // Restore Data Logic
-            const handleRestore = (e) => {
-                const file = e.target.files[0];
-                if(!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    try {
-                        const content = JSON.parse(ev.target.result);
-                        if(content.cashflow) {
-                            if(confirm("Restore data from backup? This will replace current data.")) {
-                                setData(content);
-                                alert("✅ Data Restored Successfully!");
-                            }
-                        } else { alert("Invalid Backup File"); }
-                    } catch { alert("Error parsing file"); }
-                };
-                reader.readAsText(file);
-            };
-
             if (isLocked && data.settings?.pin) return <PinScreen correctPin={data.settings.pin} onUnlock={() => setIsLocked(false)} />;
 
             return (
                 <div className="max-w-md mx-auto min-h-screen pb-24 relative bg-bgSoft text-slate-800 dark:bg-gray-900 dark:text-white transition-colors duration-300">
                     <div className="flex justify-between items-center p-5 bg-white dark:bg-darkCard sticky top-0 z-40 shadow-sm">
-                        <h1 className="text-xl font-black text-primary tracking-tight dark:text-white">Finance Master</h1>
+                        <div className="flex flex-col">
+                            <h1 className="text-xl font-black text-primary tracking-tight dark:text-white">Finance Master</h1>
+                            <div className="flex items-center gap-1">
+                                {user ? (
+                                    <span className={`text-[10px] flex items-center gap-1 font-bold ${syncStatus === 'success' ? 'text-success' : syncStatus === 'error' ? 'text-danger' : 'text-orange-500'}`}>
+                                        {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'error' ? 'Sync Error' : 'Cloud Active'}
+                                        {syncStatus === 'success' && <Icons.CloudCheck />}
+                                    </span>
+                                ) : (
+                                    <span className="text-[10px] text-slate-400 font-bold">Local Only</span>
+                                )}
+                            </div>
+                        </div>
                         <div className="flex gap-2">
                             <button onClick={() => setShowSettings(true)} className="p-2 rounded-full bg-gray-100 dark:bg-slate-700 text-slate-600 dark:text-white transition-colors"><Icons.Settings /></button>
                         </div>
                     </div>
 
                     <div className="p-4">
-                        {activeTab === 'dashboard' && <DashboardTab data={data} onRestore={handleRestore} />}
+                        {activeTab === 'dashboard' && <DashboardTab data={data} user={user} onLogin={handleLogin} />}
                         {activeTab === 'cashflow' && <CashflowTab data={data.cashflow} onAdd={(i)=>addEntry('cashflow',i)} onUpdate={(id, d)=>updateEntry('cashflow', id, d)} onDelete={(id)=>deleteEntry('cashflow',id)} />}
                         {activeTab === 'debts' && <DebtsTab data={data.debts} onAdd={(i)=>addEntry('debts',i)} onUpdate={(id, d)=>updateEntry('debts', id, d)} onDelete={(id)=>deleteEntry('debts',id)} />}
                         {activeTab === 'assets' && <AssetsTab data={data.assets} onAdd={(i)=>addEntry('assets',i)} onDelete={(id)=>deleteEntry('assets',id)} />}
@@ -182,7 +258,7 @@
                         <NavBtn id="assets" icon={<Icons.Briefcase />} label="Assets" active={activeTab} set={setActiveTab} />
                     </div>
 
-                    {showSettings && <SettingsModal currentPin={data.settings?.pin} darkMode={darkMode} onSave={(s) => { updateSettings(s); setDarkMode(s.darkMode); }} onClose={() => setShowSettings(false)} />}
+                    {showSettings && <SettingsModal user={user} onLogin={handleLogin} onLogout={handleLogout} currentPin={data.settings?.pin} darkMode={darkMode} onSave={(s) => { updateSettings(s); setDarkMode(s.darkMode); }} onClose={() => setShowSettings(false)} />}
                 </div>
             );
         }
@@ -210,7 +286,7 @@
             );
         }
 
-        function SettingsModal({ currentPin, darkMode, onSave, onClose }) {
+        function SettingsModal({ user, onLogin, onLogout, currentPin, darkMode, onSave, onClose }) {
             const [isPinEnabled, setIsPinEnabled] = useState(!!currentPin);
             const [pin, setPin] = useState(currentPin || '');
             const [isDark, setIsDark] = useState(darkMode);
@@ -224,13 +300,33 @@
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
                     <div className="bg-white dark:bg-darkCard w-[90%] max-w-sm p-6 rounded-2xl shadow-2xl animate-slideUp">
-                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">App Settings</h3>
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Settings</h3>
+                        
+                        {/* Cloud Backup Section */}
+                        <div className="mb-6 p-4 bg-blue-50 dark:bg-slate-800/50 rounded-xl border border-blue-100 dark:border-slate-700">
+                            <h4 className="font-bold text-slate-700 dark:text-blue-100 mb-2 flex items-center gap-2"><Icons.Cloud /> Cloud Backup</h4>
+                            {user ? (
+                                <div className="text-sm">
+                                    <p className="text-slate-600 dark:text-slate-400 mb-3">Logged in as <span className="font-bold">{user.email}</span></p>
+                                    <p className="text-xs text-green-600 dark:text-green-400 mb-3 font-bold">Auto-save is ON.</p>
+                                    <button onClick={onLogout} className="w-full py-2 bg-red-100 text-red-600 rounded-lg text-xs font-bold">Sign Out</button>
+                                </div>
+                            ) : (
+                                <div>
+                                    <p className="text-xs text-slate-500 mb-3">Sign in to sync your data and never lose it.</p>
+                                    <button onClick={onLogin} className="w-full py-2 bg-white border border-slate-300 rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-slate-50 text-slate-700">
+                                        <Icons.Google /> Sign in with Google
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
                         <div className="flex justify-between items-center mb-6 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
                             <div className="flex items-center gap-3"><div className="text-slate-500 dark:text-white"><Icons.Moon /></div><span className="font-bold text-slate-700 dark:text-white">Dark Mode</span></div>
                             <button onClick={() => setIsDark(!isDark)} className={`w-12 h-6 rounded-full p-1 transition-colors ${isDark ? 'bg-primary' : 'bg-slate-300'}`}><div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${isDark ? 'translate-x-6' : ''}`}></div></button>
                         </div>
                         <div className="flex justify-between items-center mb-4">
-                            <div className="flex items-center gap-2"><Icons.Lock className="text-slate-500 dark:text-white w-5 h-5" /><span className="font-bold text-slate-700 dark:text-white">App Lock (Optional)</span></div>
+                            <div className="flex items-center gap-2"><Icons.Lock className="text-slate-500 dark:text-white w-5 h-5" /><span className="font-bold text-slate-700 dark:text-white">App Lock</span></div>
                             <button onClick={() => setIsPinEnabled(!isPinEnabled)} className={`w-12 h-6 rounded-full p-1 transition-colors ${isPinEnabled ? 'bg-primary' : 'bg-slate-300'}`}><div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${isPinEnabled ? 'translate-x-6' : ''}`}></div></button>
                         </div>
                         {isPinEnabled && (
@@ -249,20 +345,12 @@
         }
 
         // --- DASHBOARD ---
-        function DashboardTab({ data, onRestore }) {
+        function DashboardTab({ data, user, onLogin }) {
             const cashOnHand = (data.cashflow || []).filter(i=>i.type==='income').reduce((s,i)=>s+safeNum(i.amount),0) - (data.cashflow || []).filter(i=>i.type==='expense').reduce((s,i)=>s+safeNum(i.amount),0);
             const assetsUsd = (data.assets || []).filter(i=>i.currency==='$').reduce((s,i)=>s+safeNum(i.amount),0);
             const assetsKs = (data.assets || []).filter(i=>i.currency==='Ks').reduce((s,i)=>s+safeNum(i.amount),0);
             const debtsUsd = (data.debts || []).filter(d=>d.currency==='$').reduce((s,d)=> s + (d.type==='lent' ? (d.amount-d.paid) : -(d.amount-d.paid)), 0);
             const debtsKs = (data.debts || []).filter(d=>d.currency==='Ks').reduce((s,d)=> s + (d.type==='lent' ? (d.amount-d.paid) : -(d.amount-d.paid)), 0);
-
-            const handleBackup = () => {
-                const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = `backup_${new Date().toISOString().split('T')[0]}.json`;
-                link.click();
-            };
 
             return (
                 <div className="space-y-6 animate-slideUp pb-10">
@@ -278,10 +366,15 @@
                         </div>
                     </div>
 
-                    <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 grid grid-cols-2 gap-3">
-                        <button onClick={handleBackup} className="bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 p-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-transform"><Icons.Save className="text-primary w-4 h-4" /> Backup</button>
-                        <label className="bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 p-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-95 transition-transform"><Icons.Refresh className="text-primary w-4 h-4" /> Restore Data<input type="file" accept=".json" onChange={onRestore} className="hidden" /></label>
-                    </div>
+                    {!user && (
+                        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800 p-4 rounded-xl flex items-center justify-between">
+                            <div>
+                                <h4 className="font-bold text-orange-800 dark:text-orange-200 text-sm">Data Not Synced</h4>
+                                <p className="text-xs text-orange-600 dark:text-orange-300">Login to backup your data.</p>
+                            </div>
+                            <button onClick={onLogin} className="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md">Login</button>
+                        </div>
+                    )}
                 </div>
             );
         }
@@ -340,7 +433,6 @@
                         ))
                     }
                     <button onClick={() => { setEditItem(null); setIsOpen(true); }} className="fixed bottom-24 right-5 w-14 h-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center hover:scale-105 z-20"><Icons.Plus /></button>
-                    
                     {isOpen && <TransactionModal initialData={editItem} onClose={() => setIsOpen(false)} onSave={(data) => { if(editItem) onUpdate(editItem.id, data); else onAdd(data); }} />}
                 </div>
             );
@@ -350,11 +442,7 @@
             const [form, setForm] = useState(initialData || { type: 'expense', title: '', amount: '' });
             const [isMath, setIsMath] = useState(false);
 
-            const handleSave = () => {
-                if (!form.title || !form.amount) return;
-                onSave(form);
-                onClose();
-            };
+            const handleSave = () => { if (!form.title || !form.amount) return; onSave(form); onClose(); };
 
             return (
                 <div className="fixed inset-0 z-50 flex items-start justify-center pt-16">
@@ -381,7 +469,7 @@
             );
         }
 
-        // --- DEBTS TAB (CLEAN) ---
+        // --- DEBTS TAB ---
         function DebtsTab({ data, onAdd, onUpdate, onDelete }) {
             const [view, setView] = useState('lent');
             const [showAddModal, setShowAddModal] = useState(false);
@@ -408,22 +496,33 @@
                     <div className="flex bg-white dark:bg-darkCard p-1 rounded-xl shadow-sm mb-4 border border-slate-100 dark:border-slate-700"><button onClick={() => setView('lent')} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${view === 'lent' ? 'bg-successBg text-success' : 'text-slate-400'}`}>To Receive</button><button onClick={() => setView('borrowed')} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${view === 'borrowed' ? 'bg-dangerBg text-danger' : 'text-slate-400'}`}>To Pay</button></div>
                     <div className="space-y-3">
                         {filtered.map(item => {
-                            const paid = safeNum(item.paid); const total = safeNum(item.amount); const remaining = total - paid;
+                            const paid = safeNum(item.paid); 
+                            const total = safeNum(item.amount); 
+                            const remaining = total - paid;
                             const percent = Math.min(100, (paid / total) * 100);
                             const isDone = remaining <= 0;
                             return (
                                 <div key={item.id} className={`bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 ${isDone ? 'opacity-60' : ''}`}>
-                                    <div className="flex justify-between items-center mb-1">
+                                    {/* Header */}
+                                    <div className="flex justify-between items-start mb-1">
                                         <h3 className="font-bold text-slate-800 dark:text-white text-base">{item.name}</h3>
-                                        <span className="font-bold text-lg text-slate-700 dark:text-slate-300">{total.toLocaleString()} <span className="text-xs text-slate-400">{item.currency}</span></span>
+                                        <span className={`font-bold text-lg ${view==='lent'?'text-success':'text-danger'}`}>{total.toLocaleString()} <span className="text-xs text-slate-400">{item.currency}</span></span>
                                     </div>
                                     {item.note && <p className="text-xs text-slate-400 italic mb-3">"{item.note}"</p>}
-                                    <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full mb-3 overflow-hidden"><div className={`h-full rounded-full ${view==='lent'?'bg-success':'bg-danger'}`} style={{width: `${percent}%`}}></div></div>
+                                    
+                                    {/* Progress Bar */}
+                                    <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full mb-3 overflow-hidden">
+                                        <div className={`h-full rounded-full ${view==='lent'?'bg-success':'bg-danger'}`} style={{width: `${percent}%`}}></div>
+                                    </div>
+                                    
+                                    {/* Clean Stats Row */}
                                     <div className="flex justify-between items-end">
-                                        <div className="flex gap-4 text-xs font-medium">
-                                            <div className="flex flex-col"><span className="text-slate-400 text-[9px] uppercase">Paid Back</span><span className="text-slate-600 dark:text-slate-300 font-bold text-sm">{paid.toLocaleString()}</span></div>
-                                            <div className="flex flex-col"><span className="text-slate-400 text-[9px] uppercase">Remaining</span><span className={`font-bold text-sm ${remaining > 0 ? (view==='lent'?'text-danger':'text-danger') : 'text-success'}`}>{remaining.toLocaleString()}</span></div>
+                                        <div className="flex gap-3 text-xs font-medium">
+                                            <span className="text-slate-400">Paid: {paid.toLocaleString()}</span>
+                                            <span className={`${remaining > 0 ? (view==='lent'?'text-danger':'text-danger') : 'text-success'} font-bold`}>Rem: {remaining.toLocaleString()}</span>
                                         </div>
+
+                                        {/* Compact Actions */}
                                         <div className="flex items-center gap-1">
                                             <button onClick={() => openEdit(item)} className="p-2 text-slate-300 hover:text-primary"><Icons.Pencil className="w-4 h-4"/></button>
                                             <button onClick={()=>onDelete(item.id)} className="p-2 text-slate-300 hover:text-danger"><Icons.Trash className="w-4 h-4"/></button>
@@ -436,6 +535,7 @@
                     </div>
                     <button onClick={openAdd} className="fixed bottom-24 right-5 w-14 h-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center hover:scale-105 z-20"><Icons.Plus /></button>
                     
+                    {/* Debt Modal */}
                     {showAddModal && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
                             <div className="bg-white dark:bg-darkCard w-[90%] max-w-sm p-6 rounded-2xl shadow-2xl animate-slideUp">
@@ -452,6 +552,7 @@
                         </div>
                     )}
 
+                    {/* Repayment Modal */}
                     {repayItem && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
                             <div className="bg-white dark:bg-darkCard w-[90%] max-w-sm p-6 rounded-2xl shadow-2xl animate-slideUp">
@@ -516,3 +617,4 @@
     </script>
 </body>
 </html>
+
