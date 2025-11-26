@@ -3,419 +3,465 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Finance Master V2.5 (Pro Teal)</title>
+    <title>Finance Master V7.6 (True Clean)</title>
     <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        primary: '#0f766e', // Deep Teal
-                        primaryLight: '#ccfbf1', 
+                        primary: '#0f766e', 
                         primaryDark: '#115e59', 
-                        bgSoft: '#f8fafc', // Slate 50
-                        slateDark: '#334155', 
-                    }
+                        bgSoft: '#f8fafc',
+                        success: '#10b981',
+                        successBg: '#ecfdf5',
+                        danger: '#f43f5e',
+                        dangerBg: '#fff1f2',
+                        darkCard: '#1e293b',
+                    },
+                    animation: { slideUp: 'slideUp 0.3s ease-out' },
+                    keyframes: { slideUp: { '0%': { transform: 'translateY(100%)' }, '100%': { transform: 'translateY(0)' } } }
                 }
             }
         }
     </script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        input:focus, select:focus, textarea:focus { outline: 2px solid #0f766e; outline-offset: 1px; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        input, button { outline: none; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
     </style>
 </head>
-<body>
+<body class="transition-colors duration-300">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, Component } = React;
+        const { useState, useEffect, useMemo, Component } = React;
+        const DATA_KEY = 'finance_master_v7_6';
 
-        // --- PROFESSIONAL ICONS SET ---
+        // --- ICONS ---
         const Icon = ({ d, className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d={d} /></svg>;
-        
         const Icons = {
-            // Summary: Dashboard Grid 
             PieChart: () => <Icon d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" className="w-5 h-5" />,
-            
-            // Cashflow: Transaction List/Document
             Wallet: () => <Icon d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" className="w-5 h-5" />,
-            
-            // Debts: Handshake (Agreement)
             Exchange: () => <Icon d="M20.66 12L18.06 14.6a2.828 2.828 0 0 1-4 0l-3.34-3.34a2.828 2.828 0 0 0-4 0L4.06 13.94a2.828 2.828 0 1 0 4 4l2.66-2.66 2.6 2.6a2.828 2.828 0 1 0 4-4l-3.34-3.34a2.828 2.828 0 0 1 4 0l2.68 2.68" className="w-6 h-6" />,
-            
-            // Assets: Briefcase (Portfolio)
             Briefcase: () => <Icon d="M20 7h-4V4c0-1.1-.9-2-2-2h-4C9 2 8 2.9 8 4v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2z" className="w-5 h-5" />,
-
-            // UI Utility Icons
-            Plus: () => <Icon d="M12 5v14M5 12h14" className="w-5 h-5" />,
-            Trash: () => <Icon d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" className="w-5 h-5" />,
-            Edit: () => <Icon d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" className="w-5 h-5" />,
-            Pencil: () => <Icon d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" className="w-5 h-5" />,
-            TrendingUp: () => <Icon d="M23 6l-9.5 9.5-5-5L1 18" className="w-5 h-5" />,
-            TrendingDown: () => <Icon d="M23 18l-9.5-9.5-5 5L1 6" className="w-5 h-5" />,
+            Plus: () => <Icon d="M12 5v14M5 12h14" className="w-6 h-6" />,
+            Trash: () => <Icon d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" className="w-4 h-4" />,
+            Pencil: () => <Icon d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" className="w-4 h-4" />,
+            Calendar: () => <Icon d="M19 4h-1V3a1 1 0 0 0-2 0v1H8V3a1 1 0 0 0-2 0v1H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2 2V6a2 2 0 0 0-2-2zm0 16H5V9h14v11z" className="w-5 h-5" />,
             Check: () => <Icon d="M20 6L9 17l-5-5" className="w-5 h-5" />,
+            X: () => <Icon d="M18 6L6 18M6 6l12 12" className="w-6 h-6" />,
             Left: () => <Icon d="M15 18l-6-6 6-6" className="w-5 h-5" />,
             Right: () => <Icon d="M9 18l6-6-6-6" className="w-5 h-5" />,
-            Calendar: () => <Icon d="M19 4h-1V3a1 1 0 0 0-2 0v1H8V3a1 1 0 0 0-2 0v1H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14v11z" className="w-5 h-5" />,
-            Save: () => <Icon d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" className="w-5 h-5" />,
-            Refresh: () => <Icon d="M23 4v6h-6M1 20v-6h6" className="w-5 h-5" />,
+            Lock: () => <Icon d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" className="w-5 h-5" />,
+            Moon: () => <Icon d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" className="w-5 h-5" />,
+            Sun: () => <Icon d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" className="w-5 h-5" />,
+            Settings: () => <Icon d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" className="w-5 h-5" />,
         };
 
-        // --- DATA & HELPERS ---
-        const DATA_KEY = 'finance_master_v1';
-
-        const calculateSafe = (val) => {
-            try {
-                const str = String(val || '').replace(/[^0-9.+\-]/g, ''); 
-                if (!str) return 0;
-                return str.split('+').reduce((sum, part) => {
-                    const num = parseFloat(part);
-                    return sum + (isFinite(num) ? num : 0);
-                }, 0);
-            } catch { return 0; }
-        };
-
-        const safeNum = (val) => {
-            const num = parseFloat(val);
-            return isFinite(num) ? num : 0;
-        };
+        const safeNum = (val) => { const num = parseFloat(val); return isFinite(num) ? num : 0; };
+        const calculateSafe = (val) => { try { return String(val||'').replace(/[^0-9.+\-]/g, '').split('+').reduce((sum, part) => sum + (parseFloat(part)||0), 0); } catch { return 0; } };
 
         const loadData = () => {
             try {
                 const raw = localStorage.getItem(DATA_KEY);
-                if (!raw) return { cashflow: [], debts: [], assets: [] };
+                if (!raw) return { cashflow: [], debts: [], assets: [], settings: { budget: 0, darkMode: false, pin: null } };
                 const parsed = JSON.parse(raw);
-                const clean = (arr) => (Array.isArray(arr) ? arr.map(i => ({
-                    ...i, 
-                    id: i.id || Date.now(),
-                    date: i.date || new Date().toISOString(),
-                    amount: safeNum(i.amount), 
-                    paid: safeNum(i.paid)
-                })) : []);
-                return { cashflow: clean(parsed.cashflow), debts: clean(parsed.debts), assets: clean(parsed.assets) };
-            } catch { return { cashflow: [], debts: [], assets: [] }; }
+                return {
+                    cashflow: Array.isArray(parsed.cashflow) ? parsed.cashflow : [],
+                    debts: Array.isArray(parsed.debts) ? parsed.debts : [],
+                    assets: Array.isArray(parsed.assets) ? parsed.assets : [],
+                    settings: parsed.settings || { budget: 0, darkMode: false, pin: null }
+                };
+            } catch { return { cashflow: [], debts: [], assets: [], settings: { budget: 0, darkMode: false, pin: null } }; }
         };
 
         class ErrorBoundary extends Component {
             constructor(props) { super(props); this.state = { hasError: false }; }
             static getDerivedStateFromError(error) { return { hasError: true }; }
-            render() {
-                if (this.state.hasError) {
-                    return (
-                        <div className="h-screen flex flex-col items-center justify-center p-6 text-center bg-white">
-                            <h1 className="text-xl font-bold text-red-600 mb-2">App Paused</h1>
-                            <button onClick={() => window.location.reload()} className="bg-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg w-full">Reload App</button>
-                        </div>
-                    );
-                }
-                return this.props.children;
-            }
+            render() { if (this.state.hasError) return <div className="h-screen flex items-center justify-center"><button onClick={() => window.location.reload()} className="bg-primary text-white p-4 rounded">Reset App</button></div>; return this.props.children; }
         }
 
         function App() {
             const [data, setData] = useState(loadData);
             const [activeTab, setActiveTab] = useState('dashboard');
+            const [isLocked, setIsLocked] = useState(!!(data.settings && data.settings.pin));
+            const [showSettings, setShowSettings] = useState(false);
+            const [darkMode, setDarkMode] = useState(data.settings ? data.settings.darkMode : false);
 
             useEffect(() => {
-                try { localStorage.setItem(DATA_KEY, JSON.stringify(data)); } catch {}
-            }, [data]);
+                const newData = { ...data, settings: { ...data.settings, darkMode } };
+                localStorage.setItem(DATA_KEY, JSON.stringify(newData));
+                if (darkMode) document.documentElement.classList.add('dark');
+                else document.documentElement.classList.remove('dark');
+            }, [data, darkMode]);
 
-            // --- ACTIONS ---
             const addEntry = (key, item) => {
-                const finalAmt = calculateSafe(item.amount); 
-                const newItem = key === 'debts' ? { ...item, amount: finalAmt, paid: 0 } : { ...item, amount: finalAmt };
+                const finalAmt = calculateSafe(item.amount);
+                const newItem = key === 'debts' ? { ...item, amount: finalAmt, paid: 0, status: 'active' } : { ...item, amount: finalAmt };
                 setData(prev => ({ ...prev, [key]: [{ ...newItem, id: Date.now(), date: new Date().toISOString() }, ...(prev[key]||[])] }));
             };
-
-            const updateEntry = (key, updatedItem) => {
-                const finalAmt = calculateSafe(updatedItem.amount);
+            const updateEntry = (key, id, updates) => {
                 setData(prev => ({
                     ...prev,
-                    [key]: prev[key].map(i => i.id === updatedItem.id ? { ...i, ...updatedItem, amount: finalAmt } : i)
-                }));
-            };
-
-            const deleteEntry = (key, id) => {
-                if(confirm("Delete?")) setData(prev => ({ ...prev, [key]: prev[key].filter(i => i.id !== id) }));
-            };
-
-            const addDebtPayment = (id, amount) => {
-                const payAmt = calculateSafe(amount);
-                setData(prev => ({
-                    ...prev,
-                    debts: prev.debts.map(i => {
-                        if (i.id !== id) return i;
-                        const newPaid = safeNum(i.paid) + payAmt;
-                        const status = newPaid >= safeNum(i.amount) ? 'completed' : 'active';
-                        return { ...i, paid: newPaid, status };
+                    [key]: prev[key].map(item => {
+                        if (item.id !== id) return item;
+                        const updatedItem = { ...item, ...updates };
+                        if(key === 'debts') {
+                            if(updates.amount !== undefined) updatedItem.amount = calculateSafe(updates.amount);
+                            if(updates.paid !== undefined) updatedItem.paid = safeNum(updates.paid);
+                            updatedItem.status = updatedItem.paid >= updatedItem.amount ? 'completed' : 'active';
+                        } else {
+                            if(updates.amount !== undefined) updatedItem.amount = calculateSafe(updates.amount);
+                        }
+                        return updatedItem;
                     })
                 }));
             };
+            const deleteEntry = (key, id) => { if(confirm("Delete?")) setData(prev => ({ ...prev, [key]: prev[key].filter(i => i.id !== id) })); };
+            const updateSettings = (newSettings) => setData(prev => ({ ...prev, settings: { ...prev.settings, ...newSettings } }));
+            
+            const handleSetPin = (pin) => {
+                setData(prev => ({ ...prev, settings: { ...prev.settings, pin: pin } }));
+                setShowSettings(false);
+                alert(pin ? "PIN Set!" : "PIN Removed!");
+            };
 
-            const handleBackup = () => {
-                const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = `finance_backup_${new Date().toISOString().split('T')[0]}.json`;
-                link.click();
-            };
-            const handleRestore = (e) => {
-                const file = e.target.files[0];
-                if(!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    try {
-                        const content = JSON.parse(ev.target.result);
-                        if(content.cashflow) {
-                            if(confirm("Restore backup?")) { setData(content); setTimeout(() => alert("Restored!"), 100); }
-                        } else alert("Invalid file");
-                    } catch { alert("Error"); }
-                };
-                reader.readAsText(file);
-            };
+            if (isLocked && data.settings?.pin) return <PinScreen correctPin={data.settings.pin} onUnlock={() => setIsLocked(false)} />;
 
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-bgSoft pb-24 text-slate-800">
-                    <div className="bg-primary text-white p-5 sticky top-0 z-40 shadow-md">
-                        <div className="flex justify-between items-center">
-                            <div><h1 className="text-xl font-bold tracking-tight text-white">Finance Master</h1><p className="text-xs text-primaryLight opacity-90">Manage your wealth</p></div>
-                            <div className="h-8 w-8 bg-white/10 rounded-full flex items-center justify-center text-white font-bold backdrop-blur-sm">Z</div>
+                <div className="max-w-md mx-auto min-h-screen pb-24 relative bg-bgSoft text-slate-800 dark:bg-gray-900 dark:text-white transition-colors duration-300">
+                    <div className="flex justify-between items-center p-5 bg-white dark:bg-darkCard sticky top-0 z-40 shadow-sm">
+                        <h1 className="text-xl font-black text-primary tracking-tight dark:text-white">Finance Master</h1>
+                        <div className="flex gap-2">
+                            <button onClick={() => setShowSettings(true)} className="p-2 rounded-full bg-gray-100 dark:bg-slate-700 text-slate-600 dark:text-white transition-colors"><Icons.Settings /></button>
                         </div>
                     </div>
 
                     <div className="p-4">
-                        {activeTab === 'dashboard' && <DashboardTab data={data} onBackup={handleBackup} onRestore={handleRestore} />}
-                        {activeTab === 'cashflow' && <CashflowTab data={data.cashflow} onAdd={(i)=>addEntry('cashflow',i)} onUpdate={(i)=>updateEntry('cashflow',i)} onDelete={(id)=>deleteEntry('cashflow',id)} />}
-                        {activeTab === 'debts' && <DebtsTab data={data.debts} onAdd={(i)=>addEntry('debts',i)} onUpdate={(i)=>updateEntry('debts',i)} onDelete={(id)=>deleteEntry('debts',id)} onPay={addDebtPayment} />}
-                        {activeTab === 'assets' && <AssetsTab data={data.assets} onAdd={(i)=>addEntry('assets',i)} onUpdate={(i)=>updateEntry('assets',i)} onDelete={(id)=>deleteEntry('assets',id)} />}
+                        {activeTab === 'dashboard' && <DashboardTab data={data} />}
+                        {activeTab === 'cashflow' && <CashflowTab data={data.cashflow} onAdd={(i)=>addEntry('cashflow',i)} onUpdate={(id, d)=>updateEntry('cashflow', id, d)} onDelete={(id)=>deleteEntry('cashflow',id)} />}
+                        {activeTab === 'debts' && <DebtsTab data={data.debts} onAdd={(i)=>addEntry('debts',i)} onUpdate={(id, d)=>updateEntry('debts', id, d)} onDelete={(id)=>deleteEntry('debts',id)} />}
+                        {activeTab === 'assets' && <AssetsTab data={data.assets} onAdd={(i)=>addEntry('assets',i)} onDelete={(id)=>deleteEntry('assets',id)} />}
                     </div>
 
-                    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around py-3 pb-safe safe-area-pb z-30 max-w-md mx-auto shadow-lg">
-                        <NavBtn id="dashboard" icon={<Icons.PieChart />} label="Summary" active={activeTab} set={setActiveTab} />
+                    <div className="fixed bottom-0 w-full max-w-md bg-white dark:bg-darkCard border-t border-slate-100 dark:border-slate-800 flex justify-around py-3 pb-safe z-30">
+                        <NavBtn id="dashboard" icon={<Icons.PieChart />} label="Overview" active={activeTab} set={setActiveTab} />
                         <NavBtn id="cashflow" icon={<Icons.Wallet />} label="CashFlow" active={activeTab} set={setActiveTab} />
                         <NavBtn id="debts" icon={<Icons.Exchange />} label="Debts" active={activeTab} set={setActiveTab} />
                         <NavBtn id="assets" icon={<Icons.Briefcase />} label="Assets" active={activeTab} set={setActiveTab} />
                     </div>
+
+                    {showSettings && <SettingsModal currentPin={data.settings?.pin} darkMode={darkMode} onSave={(s) => { updateSettings(s); setDarkMode(s.darkMode); }} onClose={() => setShowSettings(false)} />}
                 </div>
             );
         }
 
         const NavBtn = ({ id, icon, label, active, set }) => (
-            <button onClick={() => set(id)} className={`flex flex-col items-center gap-1 w-16 transition-colors ${active === id ? 'text-primary' : 'text-slate-400'}`}>
-                <div className={`transition-all ${active === id ? 'bg-primary p-2 rounded-xl text-white -translate-y-2 shadow-lg shadow-primary/30' : ''}`}>{icon}</div>
-                <span className={`text-[10px] font-bold ${active === id ? 'opacity-100' : 'opacity-80'}`}>{label}</span>
+            <button onClick={() => set(id)} className={`flex flex-col items-center gap-1 w-16 transition-all duration-300 ${active === id ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-500'}`}>
+                <div>{icon}</div>
+                <span className="text-[10px] font-bold">{label}</span>
             </button>
         );
 
-        // --- TABS ---
-
-        function DashboardTab({ data, onBackup, onRestore }) {
-            const calcTotal = (arr, type, currency) => arr.filter(i => i.type === type && i.currency === currency).reduce((sum, i) => sum + (safeNum(i.amount) - safeNum(i.paid)), 0);
-            
-            const assetKs = data.assets.filter(i => i.currency === 'Ks').reduce((sum, i) => sum + safeNum(i.amount), 0);
-            const assetUsd = data.assets.filter(i => i.currency === '$').reduce((sum, i) => sum + safeNum(i.amount), 0);
-            const lentKs = calcTotal(data.debts, 'lent', 'Ks');
-            const borrowedKs = calcTotal(data.debts, 'borrowed', 'Ks');
-            const lentUsd = calcTotal(data.debts, 'lent', '$');
-            const borrowedUsd = calcTotal(data.debts, 'borrowed', '$');
-            
-            const netWorthKs = assetKs + (lentKs - borrowedKs);
-            const netWorthUsd = assetUsd + (lentUsd - borrowedUsd);
-
-            const currentMonth = new Date().toISOString().slice(0, 7);
-            const thisMonthFlow = data.cashflow.filter(i => i.date && i.date.startsWith(currentMonth));
-            const income = thisMonthFlow.filter(i => i.type === 'income').reduce((sum, i) => sum + safeNum(i.amount), 0);
-            const expense = thisMonthFlow.filter(i => i.type === 'expense').reduce((sum, i) => sum + safeNum(i.amount), 0);
-            const balance = income - expense;
-
+        function PinScreen({ correctPin, onUnlock }) {
+            const [input, setInput] = useState('');
+            const handleNum = (n) => { const next = input + n; setInput(next); if (next.length === 4) { if (next === correctPin) onUnlock(); else { alert("Wrong PIN"); setInput(''); } } };
             return (
-                <div className="space-y-5 animate-scaleIn pb-10">
-                    <div className="bg-primary text-white p-6 rounded-2xl shadow-xl shadow-primary/20 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-10"><Icons.Briefcase /></div>
-                        <h2 className="text-white text-xs font-bold tracking-widest uppercase mb-4 opacity-80">Total Net Worth</h2>
-                        <div className="flex flex-col gap-4">
-                            <div><span className="text-3xl font-bold tracking-tight text-white">{netWorthUsd.toLocaleString()}</span> <span className="text-primaryLight text-sm">$</span></div>
-                            <div className="w-full h-px bg-white/20"></div>
-                            <div><span className="text-3xl font-bold tracking-tight text-white">{netWorthKs.toLocaleString()}</span> <span className="text-primaryLight text-sm">Ks</span></div>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500">
-                            <div className="flex items-center gap-2 mb-2 text-green-600"><Icons.TrendingUp /><span className="text-xs font-bold">Income</span></div>
-                            <span className="text-lg font-bold text-slate-700">${income.toLocaleString()}</span>
-                        </div>
-                        <div className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500">
-                            <div className="flex items-center gap-2 mb-2 text-red-600"><Icons.TrendingDown /><span className="text-xs font-bold">Expense</span></div>
-                            <span className="text-lg font-bold text-slate-700">${expense.toLocaleString()}</span>
-                        </div>
-                    </div>
-                    <div className={`p-4 rounded-xl shadow-sm border-l-4 flex justify-between items-center ${balance >= 0 ? 'bg-slate-800 border-primary text-white' : 'bg-red-50 border-red-600 text-red-800'}`}>
-                        <div><h3 className="text-xs font-bold uppercase tracking-widest opacity-80">Monthly Balance</h3><p className="text-xs opacity-60">Income - Expense</p></div>
-                        <span className="text-2xl font-bold">${balance.toLocaleString()}</span>
-                    </div>
-                    <div className="mt-6 pt-6 border-t border-slate-200">
-                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Data Backup</h3>
-                         <div className="grid grid-cols-2 gap-3">
-                            <button onClick={onBackup} className="bg-slate-800 text-white p-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-md"><Icons.Save className="text-primary" /> Save Backup</button>
-                            <label className="bg-white border border-slate-300 text-slate-700 p-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform shadow-sm hover:bg-slate-50"><Icons.Refresh className="text-primary" /> Restore Data<input type="file" accept=".json" onChange={onRestore} className="hidden" /></label>
-                         </div>
+                <div className="h-screen bg-primary dark:bg-darkCard flex flex-col items-center justify-center text-white">
+                    <div className="mb-6 p-4 bg-white/10 rounded-full"><Icons.Lock className="w-8 h-8" /></div>
+                    <h2 className="text-xl font-bold mb-8">Enter PIN</h2>
+                    <div className="flex gap-4 mb-10">{[0,1,2,3].map(i => (<div key={i} className={`w-4 h-4 rounded-full border-2 border-white/50 ${input.length > i ? 'bg-white' : ''}`}></div>))}</div>
+                    <div className="grid grid-cols-3 gap-6 w-64">
+                        {[1,2,3,4,5,6,7,8,9].map(n => (<button key={n} onClick={() => handleNum(n)} className="w-16 h-16 rounded-full bg-white/10 text-2xl font-bold active:bg-white/30 transition-colors">{n}</button>))}
+                        <div className="col-start-2"><button onClick={() => handleNum(0)} className="w-16 h-16 rounded-full bg-white/10 text-2xl font-bold active:bg-white/30 transition-colors">0</button></div>
                     </div>
                 </div>
             );
         }
 
+        function SettingsModal({ currentPin, darkMode, onSave, onClose }) {
+            const [isPinEnabled, setIsPinEnabled] = useState(!!currentPin);
+            const [pin, setPin] = useState(currentPin || '');
+            const [isDark, setIsDark] = useState(darkMode);
+
+            const handleSave = () => {
+                if (isPinEnabled && pin.length !== 4) return alert("PIN must be 4 digits");
+                onSave({ pin: isPinEnabled ? pin : null, darkMode: isDark });
+                onClose();
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-darkCard w-[90%] max-w-sm p-6 rounded-2xl shadow-2xl animate-slideUp">
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Security Settings</h3>
+                        <div className="flex justify-between items-center mb-6 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                            <div className="flex items-center gap-3"><div className="text-slate-500 dark:text-white"><Icons.Moon /></div><span className="font-bold text-slate-700 dark:text-white">Dark Mode</span></div>
+                            <button onClick={() => setIsDark(!isDark)} className={`w-12 h-6 rounded-full p-1 transition-colors ${isDark ? 'bg-primary' : 'bg-slate-300'}`}><div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${isDark ? 'translate-x-6' : ''}`}></div></button>
+                        </div>
+                        <div className="flex justify-between items-center mb-4">
+                            <div className="flex items-center gap-2"><Icons.Lock className="text-slate-500 dark:text-white w-5 h-5" /><span className="font-bold text-slate-700 dark:text-white">App Lock (Optional)</span></div>
+                            <button onClick={() => setIsPinEnabled(!isPinEnabled)} className={`w-12 h-6 rounded-full p-1 transition-colors ${isPinEnabled ? 'bg-primary' : 'bg-slate-300'}`}><div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${isPinEnabled ? 'translate-x-6' : ''}`}></div></button>
+                        </div>
+                        {isPinEnabled && (
+                            <div className="mb-6 animate-fadeIn">
+                                <label className="text-xs text-slate-400 uppercase font-bold mb-1 block">Set 4-Digit PIN</label>
+                                <input type="number" className="w-full p-3 bg-slate-50 dark:bg-slate-800 dark:text-white rounded-xl text-center text-xl tracking-widest font-bold border border-slate-200 dark:border-slate-700" value={pin} onChange={e => setPin(e.target.value.slice(0,4))} placeholder="0000" />
+                            </div>
+                        )}
+                        <div className="flex gap-3 mt-4">
+                            <button onClick={onClose} className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-white font-bold">Cancel</button>
+                            <button onClick={handleSave} className="flex-1 py-3 rounded-xl bg-primary text-white font-bold">Save Settings</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- DASHBOARD ---
+        function DashboardTab({ data }) {
+            const cashOnHand = (data.cashflow || []).filter(i=>i.type==='income').reduce((s,i)=>s+safeNum(i.amount),0) - (data.cashflow || []).filter(i=>i.type==='expense').reduce((s,i)=>s+safeNum(i.amount),0);
+            const assetsUsd = (data.assets || []).filter(i=>i.currency==='$').reduce((s,i)=>s+safeNum(i.amount),0);
+            const assetsKs = (data.assets || []).filter(i=>i.currency==='Ks').reduce((s,i)=>s+safeNum(i.amount),0);
+            const debtsUsd = (data.debts || []).filter(d=>d.currency==='$').reduce((s,d)=> s + (d.type==='lent' ? (d.amount-d.paid) : -(d.amount-d.paid)), 0);
+            const debtsKs = (data.debts || []).filter(d=>d.currency==='Ks').reduce((s,d)=> s + (d.type==='lent' ? (d.amount-d.paid) : -(d.amount-d.paid)), 0);
+
+            return (
+                <div className="space-y-6 animate-slideUp pb-10">
+                    <div className="bg-gradient-to-br from-primary to-primaryDark text-white p-6 rounded-[2rem] shadow-2xl shadow-primary/30 relative overflow-hidden">
+                        <h2 className="text-primaryLight text-xs font-bold tracking-widest uppercase mb-3">Net Worth Breakdown</h2>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div><p className="text-[10px] text-primaryLight uppercase">USD ($)</p><div className="text-2xl font-black tracking-tight">${(cashOnHand + assetsUsd + debtsUsd).toLocaleString()}</div></div>
+                            <div className="text-right border-l border-white/20 pl-4"><p className="text-[10px] text-primaryLight uppercase">MMK (Ks)</p><div className="text-2xl font-black tracking-tight">{(assetsKs + debtsKs).toLocaleString()}</div></div>
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
+                            <span className="text-xs font-medium text-primaryLight">Liquid Cash</span>
+                            <span className="text-lg font-bold">${cashOnHand.toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- CASHFLOW TAB ---
         function CashflowTab({ data, onAdd, onUpdate, onDelete }) {
             const [isOpen, setIsOpen] = useState(false);
-            const [form, setForm] = useState({ id: null, title: '', amount: '', type: 'expense' });
+            const [editItem, setEditItem] = useState(null);
+            const [filter, setFilter] = useState('all');
             const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7));
-            
-            const filteredData = data.filter(item => item.date && item.date.startsWith(currentMonth));
-            const monthlyIncome = filteredData.filter(i => i.type === 'income').reduce((sum, i) => sum + safeNum(i.amount), 0);
-            const monthlyExpense = filteredData.filter(i => i.type === 'expense').reduce((sum, i) => sum + safeNum(i.amount), 0);
-            const monthlyBalance = monthlyIncome - monthlyExpense;
 
-            const changeMonth = (delta) => {
-                const date = new Date(currentMonth + '-01');
-                date.setMonth(date.getMonth() + delta);
-                setCurrentMonth(date.toISOString().slice(0, 7));
-            };
-            const formatMonth = (ym) => {
-                const [y, m] = ym.split('-');
-                const date = new Date(y, m - 1);
-                return date.toLocaleString('default', { month: 'long', year: 'numeric' });
-            };
+            const monthData = (data || []).filter(item => item.date && item.date.startsWith(currentMonth));
+            const filtered = monthData.sort((a,b) => new Date(b.date) - new Date(a.date)).filter(i => filter === 'all' || i.type === filter);
+            const grouped = filtered.reduce((groups, item) => {
+                const d = new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                if (!groups[d]) groups[d] = []; groups[d].push(item); return groups;
+            }, {});
 
-            const handleEdit = (item) => {
-                setForm({ id: item.id, title: item.title, amount: String(item.amount), type: item.type });
-                setIsOpen(true);
-            }
-
-            const handleSubmit = () => {
-                if(!form.title || !form.amount) return;
-                if(form.id) onUpdate(form); else onAdd(form);
-                setIsOpen(false);
-                setForm({ id: null, title: '', amount: '', type: 'expense' });
-            }
+            const changeMonth = (d) => { const date = new Date(currentMonth + '-01'); date.setMonth(date.getMonth() + d); setCurrentMonth(date.toISOString().slice(0, 7)); };
+            const formatMonth = (ym) => { const [y, m] = ym.split('-'); return new Date(y, m - 1).toLocaleString('default', { month: 'long', year: 'numeric' }); };
 
             return (
-                <div className="pb-20">
-                    <div className="bg-white rounded-xl shadow-sm p-4 mb-5 border border-slate-100">
-                        <div className="flex justify-between items-center mb-4">
-                            <button onClick={() => changeMonth(-1)} className="p-2 text-slate-400 hover:text-primary bg-slate-50 rounded-full"><Icons.Left /></button>
-                            <div className="flex items-center gap-2 font-bold text-slate-700"><Icons.Calendar className="text-primary" />{formatMonth(currentMonth)}</div>
-                            <button onClick={() => changeMonth(1)} className="p-2 text-slate-400 hover:text-primary bg-slate-50 rounded-full"><Icons.Right /></button>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2 text-center">
-                            <div className="bg-green-50 p-2 rounded-lg"><div className="text-[10px] text-green-600 font-bold uppercase">In</div><div className="font-bold text-green-700 text-sm">${monthlyIncome.toLocaleString()}</div></div>
-                            <div className="bg-red-50 p-2 rounded-lg"><div className="text-[10px] text-red-600 font-bold uppercase">Out</div><div className="font-bold text-red-700 text-sm">${monthlyExpense.toLocaleString()}</div></div>
-                            <div className="bg-slate-50 p-2 rounded-lg"><div className="text-[10px] text-slate-500 font-bold uppercase">Net</div><div className={`font-bold text-sm ${monthlyBalance >= 0 ? 'text-primary' : 'text-red-500'}`}>${monthlyBalance.toLocaleString()}</div></div>
-                        </div>
+                <div className="pb-20 space-y-4 animate-slideUp">
+                    <div className="flex justify-between items-center bg-white dark:bg-darkCard p-3 rounded-xl shadow-sm mb-2">
+                        <button onClick={() => changeMonth(-1)} className="p-2 bg-gray-100 dark:bg-slate-700 rounded-full"><Icons.Left className="w-4 h-4 text-slate-600 dark:text-white"/></button>
+                        <div className="font-bold text-slate-700 dark:text-white flex items-center gap-2"><Icons.Calendar className="w-4 h-4 text-primary"/> {formatMonth(currentMonth)}</div>
+                        <button onClick={() => changeMonth(1)} className="p-2 bg-gray-100 dark:bg-slate-700 rounded-full"><Icons.Right className="w-4 h-4 text-slate-600 dark:text-white"/></button>
                     </div>
-                    <div className="flex justify-between items-center mb-3 px-1"><h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Transactions</h2><button onClick={() => {setForm({id:null, title:'', amount:'', type:'expense'}); setIsOpen(true);}} className="text-primary text-xs font-bold flex items-center gap-1">+ Add New</button></div>
-                    <div className="space-y-3">
-                        {filteredData.length === 0 ? ( <div className="text-center py-10 text-slate-400 text-sm">No transactions in this month.</div> ) : (
-                            filteredData.map(item => (
-                                <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border-l-4 border-transparent" style={{ borderLeftColor: item.type === 'income' ? '#22c55e' : '#ef4444' }}>
-                                    <div className="flex items-center gap-3"><div><h3 className="font-bold text-slate-700">{item.title}</h3><p className="text-[10px] text-slate-400">{item.date ? new Date(item.date).getDate() : '-'} {formatMonth(currentMonth).split(' ')[0]}</p></div></div>
-                                    <div className="flex items-center gap-3">
-                                        <span className={`font-bold ${item.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>{item.type === 'income' ? '+' : '-'}${safeNum(item.amount).toLocaleString()}</span>
-                                        <button onClick={() => handleEdit(item)} className="text-slate-300 hover:text-primary"><Icons.Pencil /></button>
-                                        <button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500"><Icons.Trash /></button>
-                                    </div>
+
+                    <div className="flex bg-gray-200 dark:bg-slate-800 p-1 rounded-xl">
+                        {['all', 'income', 'expense'].map(t => (
+                            <button key={t} onClick={() => setFilter(t)} className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase transition-all ${filter === t ? 'bg-white dark:bg-darkCard shadow text-primary dark:text-white' : 'text-slate-500'}`}>{t}</button>
+                        ))}
+                    </div>
+
+                    {Object.keys(grouped).length === 0 ? <div className="text-center py-20 text-slate-400 text-sm">No records found</div> : 
+                        Object.keys(grouped).map(date => (
+                            <div key={date}>
+                                <h3 className="text-xs font-bold text-slate-400 mb-2 pl-1">{date}</h3>
+                                <div className="bg-white dark:bg-darkCard rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                                    {grouped[date].map((item, idx) => (
+                                        <div key={item.id} className={`p-4 flex justify-between items-center ${idx !== grouped[date].length-1 ? 'border-b border-slate-50 dark:border-slate-800' : ''}`}>
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${item.type==='income'?'bg-successBg text-success':'bg-dangerBg text-danger'}`}>{item.type==='income'?'💰':'💸'}</div>
+                                                <div><h4 className="font-bold text-slate-700 dark:text-slate-200 text-sm">{item.title}</h4></div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <span className={`font-bold text-sm ${item.type==='income'?'text-success':'text-slate-700 dark:text-slate-300'}`}>{item.type==='income'?'+':'-'}${safeNum(item.amount).toLocaleString()}</span>
+                                                <button onClick={() => { setEditItem(item); setIsOpen(true); }} className="p-1 bg-slate-50 dark:bg-slate-700 rounded text-slate-400 hover:text-primary"><Icons.Pencil className="w-3 h-3"/></button>
+                                                <button onClick={() => onDelete(item.id)} className="p-1 bg-slate-50 dark:bg-slate-700 rounded text-slate-400 hover:text-danger"><Icons.Trash className="w-3 h-3"/></button>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))
-                        )}
-                    </div>
-                    {isOpen && ( <Modal title={form.id ? "Edit Transaction" : "Add Transaction"} onClose={() => setIsOpen(false)}><div className="space-y-3"><div className="flex bg-slate-100 p-1 rounded-lg"><button onClick={() => setForm({...form, type: 'income'})} className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${form.type === 'income' ? 'bg-green-500 text-white shadow-sm' : 'text-slate-500'}`}>Income</button><button onClick={() => setForm({...form, type: 'expense'})} className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${form.type === 'expense' ? 'bg-red-500 text-white shadow-sm' : 'text-slate-500'}`}>Expense</button></div><input placeholder="Title (e.g. Salary, Food)" className="w-full p-3 border rounded-xl" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
-                    <input type="text" inputMode="decimal" placeholder="Amount ($) e.g. 100+50" className="w-full p-3 border rounded-xl" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} />
-                    <p className="text-[10px] text-slate-400">Tip: Use 100+50 for auto-sum.</p><button onClick={handleSubmit} className="w-full bg-primary text-white py-3 rounded-xl font-bold mt-2">Save Record</button></div></Modal> )}
+                            </div>
+                        ))
+                    }
+                    <button onClick={() => { setEditItem(null); setIsOpen(true); }} className="fixed bottom-24 right-5 w-14 h-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center hover:scale-105 z-20"><Icons.Plus /></button>
+                    {isOpen && <TransactionModal initialData={editItem} onClose={() => setIsOpen(false)} onSave={(data) => { if(editItem) onUpdate(editItem.id, data); else onAdd(data); }} />}
                 </div>
             );
         }
 
-        function DebtsTab({ data, onAdd, onUpdate, onDelete, onPay }) {
-            const [view, setView] = useState('lent');
-            const [isOpen, setIsOpen] = useState(false);
-            const [payModal, setPayModal] = useState(null);
-            const [payAmount, setPayAmount] = useState('');
-            const [form, setForm] = useState({ id: null, name: '', amount: '', currency: 'Ks', note: '', type: 'lent', status: 'active' });
-            const filtered = data.filter(i => i.type === view);
+        function TransactionModal({ initialData, onClose, onSave }) {
+            const [form, setForm] = useState(initialData || { type: 'expense', title: '', amount: '' });
+            const [isMath, setIsMath] = useState(false);
 
-            const handleEdit = (item) => {
-                setForm({ id: item.id, name: item.name, amount: String(item.amount), currency: item.currency, note: item.note || '', type: item.type, status: item.status });
-                setIsOpen(true);
-            }
-
-            const handleSubmit = () => {
-                if(!form.name || !form.amount) return;
-                if(form.id) onUpdate(form); else onAdd(form);
-                setIsOpen(false);
-                setForm({ id:null, name:'', amount:'', currency:'Ks', note: '', type:view, status:'active'});
-            }
+            const handleSave = () => { if (!form.title || !form.amount) return; onSave(form); onClose(); };
 
             return (
-                <div className="pb-20">
-                    <div className="flex bg-white p-1 rounded-xl shadow-sm mb-4"><button onClick={() => setView('lent')} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${view === 'lent' ? 'bg-green-100 text-green-700' : 'text-slate-400'}`}>ရရန်ရှိ (Lent)</button><button onClick={() => setView('borrowed')} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${view === 'borrowed' ? 'bg-red-100 text-red-700' : 'text-slate-400'}`}>ပေးရန်ရှိ (Borrowed)</button></div>
+                <div className="fixed inset-0 z-50 flex items-start justify-center pt-16">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
+                    <div className="bg-white dark:bg-darkCard w-[90%] max-w-md rounded-2xl p-6 shadow-2xl z-10 relative animate-slideUp">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-lg font-bold text-slate-800 dark:text-white">{initialData ? 'Edit Transaction' : 'Add Transaction'}</h3>
+                            <button onClick={onClose} className="p-1 bg-slate-100 dark:bg-slate-700 rounded-full"><Icons.X /></button>
+                        </div>
+                        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-6">
+                            <button onClick={() => setForm({...form, type:'expense'})} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${form.type === 'expense' ? 'bg-white dark:bg-darkCard shadow text-slate-800 dark:text-white' : 'text-slate-400'}`}>Expense</button>
+                            <button onClick={() => setForm({...form, type:'income'})} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${form.type === 'income' ? 'bg-white dark:bg-darkCard shadow text-success' : 'text-slate-400'}`}>Income</button>
+                        </div>
+                        <div className="space-y-4 mb-6">
+                            <input autoFocus placeholder="Title (e.g. Food)" className="w-full p-4 bg-slate-50 dark:bg-slate-800 dark:text-white rounded-xl text-sm font-bold border-2 border-transparent focus:border-primary outline-none" value={form.title} onChange={e => setForm({...form, title:e.target.value})} />
+                            <div>
+                                <input type="text" placeholder="Amount (e.g. 100+50)" className="w-full p-4 bg-slate-50 dark:bg-slate-800 dark:text-white rounded-xl text-lg font-bold border-2 border-transparent focus:border-primary outline-none" value={form.amount} onChange={e => { setForm({...form, amount:e.target.value}); setIsMath(e.target.value.includes('+')); }} />
+                                {isMath && <p className="text-xs text-primary mt-1 font-medium">Auto-sum: {calculateSafe(form.amount)}</p>}
+                            </div>
+                        </div>
+                        <button onClick={handleSave} className="w-full bg-primary text-white py-4 rounded-2xl font-bold text-lg shadow-lg active:scale-95">Save Record</button>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- DEBTS TAB (TRUE CLEAN RE-DESIGN) ---
+        function DebtsTab({ data, onAdd, onUpdate, onDelete }) {
+            const [view, setView] = useState('lent');
+            const [showAddModal, setShowAddModal] = useState(false);
+            const [repayItem, setRepayItem] = useState(null);
+            const [repayAmount, setRepayAmount] = useState('');
+            const filtered = data.filter(i => i.type === view);
+            const [form, setForm] = useState({ name: '', amount: '', currency: 'Ks', note: '' });
+
+            const handleRepayment = () => {
+                if(!repayAmount) return;
+                const amountToAdd = parseFloat(calculateSafe(repayAmount));
+                const currentPaid = parseFloat(repayItem.paid || 0);
+                const newPaid = currentPaid + amountToAdd;
+                onUpdate(repayItem.id, { paid: newPaid });
+                setRepayItem(null); 
+                setRepayAmount('');
+            };
+
+            const openAdd = () => { setForm({ id: null, name: '', amount: '', currency: 'Ks', note: '' }); setShowAddModal(true); };
+            const openEdit = (item) => { setForm({ ...item }); setShowAddModal(true); };
+
+            return (
+                <div className="pb-20 animate-slideUp">
+                    <div className="flex bg-white dark:bg-darkCard p-1 rounded-xl shadow-sm mb-4 border border-slate-100 dark:border-slate-700"><button onClick={() => setView('lent')} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${view === 'lent' ? 'bg-successBg text-success' : 'text-slate-400'}`}>To Receive</button><button onClick={() => setView('borrowed')} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${view === 'borrowed' ? 'bg-dangerBg text-danger' : 'text-slate-400'}`}>To Pay</button></div>
                     <div className="space-y-3">
                         {filtered.map(item => {
-                            const paid = safeNum(item.paid); const total = safeNum(item.amount); const remaining = total - paid; const percent = Math.min(100, (paid / total) * 100);
+                            const paid = safeNum(item.paid); 
+                            const total = safeNum(item.amount); 
+                            const remaining = total - paid;
+                            const percent = Math.min(100, (paid / total) * 100);
+                            const isDone = remaining <= 0;
                             return (
-                                <div key={item.id} className={`bg-white p-4 rounded-xl shadow-sm border-l-4 ${item.status === 'completed' ? 'border-slate-300 opacity-70' : (view==='lent'?'border-green-500':'border-red-500')}`}>
-                                    <div className="flex justify-between items-start mb-2"><div><h3 className="font-bold text-slate-700">{item.name}</h3><p className="text-[10px] text-slate-400">{item.date ? new Date(item.date).toLocaleDateString() : '-'}</p>{item.note && <p className="text-xs text-slate-500 italic mt-1 bg-slate-50 p-1 rounded inline-block">"{item.note}"</p>}</div><div className="text-right"><span className={`font-bold text-lg ${view==='lent'?'text-green-600':'text-red-600'}`}>{total.toLocaleString()} <span className="text-xs">{item.currency}</span></span></div></div>
-                                    <div className="w-full h-2 bg-slate-100 rounded-full mb-2 overflow-hidden"><div className={`h-full transition-all duration-500 ${view==='lent'?'bg-green-500':'bg-red-500'}`} style={{width: `${percent}%`}}></div></div>
-                                    <div className="flex justify-between items-center"><span className="text-xs font-bold text-slate-500">Rem: {remaining.toLocaleString()} {item.currency}</span><div className="flex gap-2"><button onClick={() => handleEdit(item)} className="text-slate-300 hover:text-primary"><Icons.Pencil /></button><button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500"><Icons.Trash /></button>{item.status !== 'completed' ? ( <button onClick={() => setPayModal(item.id)} className="px-3 py-1 bg-slate-800 text-white text-[10px] font-bold rounded-lg active:scale-95">{view === 'lent' ? '+ Receive' : '+ Pay'}</button> ) : ( <span className="text-xs font-bold text-green-600 flex items-center gap-1"><Icons.Check className="w-3 h-3"/> Done</span> )}</div></div>
+                                <div key={item.id} className={`bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 ${isDone ? 'opacity-60' : ''}`}>
+                                    {/* Header */}
+                                    <div className="flex justify-between items-start mb-1">
+                                        <h3 className="font-bold text-slate-800 dark:text-white text-base">{item.name}</h3>
+                                        <span className={`font-bold text-lg ${view==='lent'?'text-success':'text-danger'}`}>{total.toLocaleString()} <span className="text-xs text-slate-400">{item.currency}</span></span>
+                                    </div>
+                                    {item.note && <p className="text-xs text-slate-400 italic mb-3">"{item.note}"</p>}
+                                    
+                                    {/* Progress Bar */}
+                                    <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full mb-3 overflow-hidden">
+                                        <div className={`h-full rounded-full ${view==='lent'?'bg-success':'bg-danger'}`} style={{width: `${percent}%`}}></div>
+                                    </div>
+                                    
+                                    {/* Clean Stats Row */}
+                                    <div className="flex justify-between items-end">
+                                        <div className="flex gap-3 text-xs font-medium">
+                                            <span className="text-slate-400">Paid: {paid.toLocaleString()}</span>
+                                            <span className={`${remaining > 0 ? (view==='lent'?'text-danger':'text-danger') : 'text-success'} font-bold`}>Rem: {remaining.toLocaleString()}</span>
+                                        </div>
+
+                                        {/* Compact Actions */}
+                                        <div className="flex items-center gap-1">
+                                            <button onClick={() => openEdit(item)} className="p-2 text-slate-300 hover:text-primary"><Icons.Pencil className="w-4 h-4"/></button>
+                                            <button onClick={()=>onDelete(item.id)} className="p-2 text-slate-300 hover:text-danger"><Icons.Trash className="w-4 h-4"/></button>
+                                            {!isDone && <button onClick={() => setRepayItem(item)} className="ml-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white rounded-lg text-xs font-bold hover:bg-slate-200">+ Pay</button>}
+                                        </div>
+                                    </div>
                                 </div>
                             )
                         })}
                     </div>
-                    <button onClick={() => { setForm({...form, type: view, id: null, name: '', amount: '', note: ''}); setIsOpen(true); }} className="fixed bottom-24 right-4 bg-primary text-white h-14 w-14 rounded-full shadow-xl shadow-primary/30 flex items-center justify-center animate-bounce z-20"><Icons.Plus /></button>
-                    {isOpen && ( <Modal title={form.id ? "Edit Debt" : (view === 'lent' ? "Add Receivable" : "Add Payable")} onClose={() => setIsOpen(false)}><div className="space-y-3"><input placeholder="Person Name" className="w-full p-3 border rounded-xl" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /><textarea placeholder="Note" className="w-full p-3 border rounded-xl" rows="2" value={form.note} onChange={e => setForm({...form, note: e.target.value})}></textarea><div className="flex gap-2"><input type="text" inputMode="decimal" placeholder="Total Amount" className="flex-1 p-3 border rounded-xl" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} /><select className="w-20 p-3 border rounded-xl bg-slate-50 font-bold" value={form.currency} onChange={e => setForm({...form, currency: e.target.value})}><option value="Ks">Ks</option><option value="$">$</option></select></div><button onClick={handleSubmit} className="w-full bg-primary text-white py-3 rounded-xl font-bold mt-2">Save</button></div></Modal> )}
-                    {payModal && ( <Modal title="Add Payment" onClose={() => {setPayModal(null); setPayAmount('')}}><div className="space-y-3"><p className="text-sm text-slate-500">Enter amount paid/received:</p><input type="number" inputMode="decimal" placeholder="Amount" className="w-full p-3 border rounded-xl" value={payAmount} onChange={e => setPayAmount(e.target.value)} /><button onClick={() => { if(payAmount) { onPay(payModal, payAmount); setPayModal(null); setPayAmount(''); }}} className="w-full bg-green-600 text-white py-3 rounded-xl font-bold mt-2">Confirm Payment</button></div></Modal> )}
+                    <button onClick={openAdd} className="fixed bottom-24 right-5 w-14 h-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center hover:scale-105 z-20"><Icons.Plus /></button>
+                    
+                    {/* Debt Modal */}
+                    {showAddModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                            <div className="bg-white dark:bg-darkCard w-[90%] max-w-sm p-6 rounded-2xl shadow-2xl animate-slideUp">
+                                <h3 className="font-bold mb-4 text-slate-800 dark:text-white">{form.id ? 'Edit Debt' : 'Add Debt'}</h3>
+                                <input placeholder="Name" className="w-full p-3 mb-3 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none" value={form.name} onChange={e=>setForm({...form, name:e.target.value})}/>
+                                <div className="flex gap-2 mb-3">
+                                    <input placeholder="Total Amount" className="flex-1 p-3 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none" value={form.amount} onChange={e=>setForm({...form, amount:e.target.value})}/>
+                                    <select className="bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl px-3" value={form.currency} onChange={e=>setForm({...form, currency:e.target.value})}><option value="Ks">Ks</option><option value="$">$</option></select>
+                                </div>
+                                <textarea placeholder="Note (optional)" rows="2" className="w-full p-3 mb-4 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none" value={form.note} onChange={e=>setForm({...form, note:e.target.value})}></textarea>
+                                <button onClick={()=>{ if(form.id) onUpdate(form.id, form); else onAdd({...form, type:view, paid:0}); setShowAddModal(false); }} className="w-full bg-primary text-white py-3 rounded-xl font-bold">Save</button>
+                                <button onClick={()=>setShowAddModal(false)} className="w-full mt-2 text-slate-400 text-sm">Cancel</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Repayment Modal */}
+                    {repayItem && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                            <div className="bg-white dark:bg-darkCard w-[90%] max-w-sm p-6 rounded-2xl shadow-2xl animate-slideUp">
+                                <h3 className="font-bold mb-2 text-slate-800 dark:text-white">Add Payment</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">For: {repayItem.name}</p>
+                                <input type="number" autoFocus placeholder="Enter Amount" className="w-full p-4 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl text-lg font-bold border-2 border-primary mb-4 outline-none" value={repayAmount} onChange={e=>setRepayAmount(e.target.value)}/>
+                                <button onClick={handleRepayment} className="w-full bg-success text-white py-3 rounded-xl font-bold">Confirm Pay</button>
+                                <button onClick={()=>{setRepayItem(null); setRepayAmount('');}} className="w-full mt-2 text-slate-400 text-sm">Cancel</button>
+                            </div>
+                        </div>
+                    )}
                 </div>
-            );
+            )
         }
 
-        function AssetsTab({ data, onAdd, onUpdate, onDelete }) {
+        // --- ASSETS TAB ---
+        function AssetsTab({ data, onAdd, onDelete }) {
             const [isOpen, setIsOpen] = useState(false);
-            const [form, setForm] = useState({ id: null, name: '', amount: '', currency: 'Ks', category: 'Cash' });
+            const [form, setForm] = useState({ name: '', amount: '', currency: '$', category: 'Cash' });
             const categories = ['Cash', 'Investment', 'Property'];
 
-            const handleEdit = (item) => {
-                setForm({ id: item.id, name: item.name, amount: String(item.amount), currency: item.currency, category: item.category });
-                setIsOpen(true);
-            }
-
-            const handleSubmit = () => {
-                if(!form.name || !form.amount) return;
-                if(form.id) onUpdate(form); else onAdd(form);
-                setIsOpen(false);
-                setForm({id:null, name:'', amount:'', currency:'Ks', category:'Cash'});
-            }
-
             return (
-                <div className="pb-20">
-                    <div className="flex justify-between items-end mb-4"><h2 className="text-lg font-bold text-primary">Your Assets</h2><button onClick={() => {setForm({id:null, name:'', amount:'', currency:'Ks', category:'Cash'}); setIsOpen(true);}} className="bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md active:scale-95 transition-transform">+ Add Asset</button></div>
+                <div className="pb-20 animate-slideUp">
+                    <div className="flex justify-between items-center mb-4 px-2"><h2 className="text-lg font-bold text-slate-700 dark:text-white">Assets</h2><button onClick={()=>setIsOpen(true)} className="text-primary text-sm font-bold bg-primary/10 px-3 py-1 rounded-lg">+ Add New</button></div>
                     <div className="space-y-4">
                         {categories.map(cat => {
-                            const items = data.filter(i => i.category === cat);
+                            const items = (data || []).filter(i => i.category === cat);
                             if (items.length === 0) return null;
                             return (
                                 <div key={cat}>
                                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{cat}</h3>
                                     <div className="space-y-2">
                                         {items.map(item => (
-                                            <div key={item.id} className="bg-white p-3 rounded-xl shadow-sm flex justify-between items-center border border-slate-100">
-                                                <div><h4 className="font-bold text-slate-700">{item.name}</h4><p className="text-[10px] text-slate-400">{item.date ? new Date(item.date).toLocaleDateString() : '-'}</p></div>
-                                                <div className="flex items-center gap-3"><span className="font-bold text-primary">{safeNum(item.amount).toLocaleString()} <span className="text-xs">{item.currency}</span></span><button onClick={() => handleEdit(item)} className="text-slate-300 hover:text-primary"><Icons.Pencil /></button><button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500"><Icons.Trash /></button></div>
+                                            <div key={item.id} className="bg-white dark:bg-darkCard p-3 rounded-xl shadow-sm flex justify-between items-center border border-slate-100 dark:border-slate-700">
+                                                <div><h4 className="font-bold text-slate-700 dark:text-white">{item.name}</h4><p className="text-[10px] text-slate-400">{new Date(item.date).toLocaleDateString()}</p></div>
+                                                <div className="flex items-center gap-3"><span className="font-bold text-primary">{safeNum(item.amount).toLocaleString()} {item.currency}</span><button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500"><Icons.Trash className="w-4 h-4"/></button></div>
                                             </div>
                                         ))}
                                     </div>
@@ -423,19 +469,21 @@
                             )
                         })}
                     </div>
-                    {isOpen && ( <Modal title={form.id ? "Edit Asset" : "Add Asset"} onClose={() => setIsOpen(false)}><div className="space-y-3"><div className="flex bg-slate-100 p-1 rounded-lg">{categories.map(cat => (<button key={cat} onClick={() => setForm({...form, category: cat})} className={`flex-1 py-2 rounded-md text-[10px] font-bold transition-all ${form.category === cat ? 'bg-white text-primary shadow-sm' : 'text-slate-500'}`}>{cat}</button>))}</div><input placeholder="Name" className="w-full p-3 border rounded-xl" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /><div className="flex gap-2"><input type="text" inputMode="decimal" placeholder="Value" className="flex-1 p-3 border rounded-xl" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} /><select className="w-20 p-3 border rounded-xl bg-slate-50 font-bold" value={form.currency} onChange={e => setForm({...form, currency: e.target.value})}><option value="Ks">Ks</option><option value="$">$</option></select></div><button onClick={handleSubmit} className="w-full bg-primary text-white py-3 rounded-xl font-bold mt-2">Save Asset</button></div></Modal> )}
+                    {isOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                            <div className="bg-white dark:bg-darkCard w-3/4 p-6 rounded-2xl shadow-2xl">
+                                <h3 className="font-bold mb-4 text-slate-800 dark:text-white">Add Asset</h3>
+                                <div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-lg mb-3">{categories.map(c=><button key={c} onClick={()=>setForm({...form, category:c})} className={`flex-1 py-1.5 text-[10px] font-bold rounded-md ${form.category===c?'bg-white dark:bg-darkCard shadow text-primary':'text-slate-400'}`}>{c}</button>)}</div>
+                                <input placeholder="Name" className="w-full p-3 mb-3 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none" onChange={e=>setForm({...form, name:e.target.value})}/>
+                                <div className="flex gap-2 mb-4"><input placeholder="Value" type="number" className="flex-1 p-3 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none" onChange={e=>setForm({...form, amount:e.target.value})}/><select className="bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl px-3" onChange={e=>setForm({...form, currency:e.target.value})}><option value="$">$</option><option value="Ks">Ks</option></select></div>
+                                <button onClick={()=>{onAdd({...form}); setIsOpen(false)}} className="w-full bg-primary text-white py-3 rounded-xl font-bold">Save</button>
+                                <button onClick={()=>setIsOpen(false)} className="w-full mt-2 text-slate-400 text-sm">Cancel</button>
+                            </div>
+                        </div>
+                    )}
                 </div>
-            );
+            )
         }
-
-        const Modal = ({ title, children, onClose }) => (
-            <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-                <div className="bg-white w-full max-w-xs rounded-2xl shadow-2xl animate-scaleIn">
-                    <div className="p-4 border-b flex justify-between items-center"><h3 className="font-bold text-primary">{title}</h3><button onClick={onClose}><Icons.Trash className="w-5 h-5 text-slate-300 hover:text-red-500 rotate-45 transition-colors" /></button></div>
-                    <div className="p-4">{children}</div>
-                </div>
-            </div>
-        );
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<ErrorBoundary><App /></ErrorBoundary>);
