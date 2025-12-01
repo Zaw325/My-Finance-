@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Finance Master V16 (Rescue Mode)</title>
+    <title>Finance Master V17 (Manual Restore)</title>
     <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -65,17 +65,13 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        const DATA_KEY = 'finance_master_v16_local';
+        const DATA_KEY = 'finance_master_v17_local';
         const SYNC_ID_KEY = 'finance_master_sync_id';
 
-        // --- ICONS (CUSTOMIZED) ---
+        // --- ICONS ---
         const Icon = ({ d, className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d={d} /></svg>;
         const Icons = {
             PieChart: () => <Icon d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" className="w-5 h-5" />,
-            Wallet: () => <Icon d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" className="w-5 h-5" />,
-            Exchange: () => <Icon d="M20.66 12L18.06 14.6a2.828 2.828 0 0 1-4 0l-3.34-3.34a2.828 2.828 0 0 0-4 0L4.06 13.94a2.828 2.828 0 1 0 4 4l2.66-2.66 2.6 2.6a2.828 2.828 0 1 0 4-4l-3.34-3.34a2.828 2.828 0 0 1 4 0l2.68 2.68" className="w-6 h-6" />,
-            Briefcase: () => <Icon d="M20 7h-4V4c0-1.1-.9-2-2-2h-4C9 2 8 2.9 8 4v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2z" className="w-5 h-5" />,
-            Target: () => <Icon d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm0-14a6 6 0 1 0 6 6 6 6 0 0 0-6-6zm0 10a4 4 0 1 1 4-4 4 4 0 0 1-4 4z" className="w-5 h-5" />,
             NavCashFlow: () => ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M16 13H8" /><path d="M16 17H8" /><path d="M10 9H8" /><circle cx="12" cy="12" r="9" className="opacity-0" /></svg>),
             NavBudget: () => ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M3 21h18" /><path d="M5 21v-7" /><path d="M9 21v-10" /><path d="M13 21v-12" /><path d="M17 21v-5" /><path d="M3 14l18-10" /><path d="M17 4h4v4" /></svg>),
             NavDebt: () => ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><circle cx="14" cy="12" r="8" /><path d="M14 8v8" /><path d="M12 10h4" /><path d="M12 14h4" /><path d="M2 10h3" /><path d="M2 14h3" /><path d="M4 12h2" /></svg>),
@@ -100,6 +96,7 @@
             Download: () => <Icon d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" className="w-5 h-5" />,
             Tag: () => <Icon d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82zM7 7h.01" className="w-5 h-5" />,
             MoreDots: () => <Icon d="M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-12 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" className="w-5 h-5" />,
+            // Icons matching user request
             Car: () => <Icon d="M5 17h14v-2.3c0-.3.1-.6.3-.9l2-4.1c.4-.8-.2-1.7-1.1-1.7H3.8c-.9 0-1.5.9-1.1 1.7l2 4.1c.2.3.3.6.3.9V17zm2.5-3a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm9 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" className="w-5 h-5" />,
             Shopping: () => <Icon d="M16 11V7a4 4 0 0 0-8 0v4M5 9h14l1 12H4L5 9z" className="w-5 h-5" />,
             Phone: () => <Icon d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.12 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" className="w-5 h-5" />,
@@ -107,7 +104,7 @@
             Train: () => <Icon d="M2 12h20M2 16h20M4 12v6M20 12v6M3 7h18l-1-4H4L3 7z" className="w-5 h-5" />,
             Gift: () => <Icon d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" className="w-5 h-5" />,
             Smile: () => <Icon d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm0-14a2 2 0 1 0 2 2 2 2 0 0 0-2-2zm0 10a5 5 0 0 1-4-2.5" className="w-5 h-5" />,
-            CloudDownload: () => <Icon d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" className="w-5 h-5" />,
+            CloudUpload: () => <Icon d="M16 16l-4-4-4 4M12 12v9" className="w-5 h-5" />,
         };
 
         const safeNum = (val) => { const num = parseFloat(val); return isFinite(num) ? num : 0; };
@@ -126,7 +123,6 @@
             { id: 'exp6', type: 'expense', name: 'Gift', icon: 'Gift', color: '#ef4444' },       
         ];
 
-        // --- DATA LOADING & MIGRATION LOGIC ---
         const loadLocalData = () => {
             try {
                 const raw = localStorage.getItem(DATA_KEY);
@@ -198,20 +194,18 @@
 
             useEffect(() => { const unsubscribe = onAuthStateChanged(auth, (u) => setUser(u)); return () => unsubscribe(); }, []);
             
-            // Standard Sync Effect
             useEffect(() => {
                 let unsub;
                 if (user) {
                     setSyncStatus('syncing');
                     const ref = doc(db, syncId ? "groups" : "users", syncId || user.uid);
                     unsub = onSnapshot(ref, (snap) => {
-                        // We only update if the cloud data is NEWER or if local is empty to avoid overwriting recent local changes during a choppy connection
-                        // But for recovery, we need to be explicit.
                         if (snap.exists()) {
                             const cloudData = snap.data();
-                            // Optional: logic to merge or update. For now, we trust cloud if local is 'default'
+                            // Logic: If Local is Empty AND Cloud has data, load Cloud.
+                            // If Local has data, we assume user is working and don't overwrite automatically without logic (to be safe)
                             if (data.cashflow.length === 0 && cloudData.cashflow && cloudData.cashflow.length > 0) {
-                                if(!cloudData.categories || cloudData.categories.length === 0) cloudData.categories = DEFAULT_CATEGORIES;
+                                if(!cloudData.categories) cloudData.categories = DEFAULT_CATEGORIES;
                                 setData(cloudData);
                             }
                             setSyncStatus('success');
@@ -221,7 +215,6 @@
                 return () => { if (unsub) unsub(); };
             }, [user, syncId]);
 
-            // Save to Local/Cloud
             useEffect(() => {
                 const newData = { ...data, settings: { ...data.settings, darkMode } };
                 localStorage.setItem(DATA_KEY, JSON.stringify(newData));
@@ -235,28 +228,24 @@
                 }
             }, [data, darkMode, user, syncId]);
 
-            const handleLogin = async () => { try { await signInWithPopup(auth, provider); } catch (e) { alert(e.message); } };
+            const handleLogin = async () => { try { await signInWithPopup(auth, provider); } catch (e) { alert("Login failed. Browser blocked pop-up? Try checking Firebase Console directly."); } };
             const handleLogout = async () => { await signOut(auth); };
             const handleSetSyncId = (id) => { const i = id.trim(); setSyncId(i); localStorage.setItem(SYNC_ID_KEY, i); alert(i ? `Switched to Group: ${i}` : "Personal Mode"); };
 
-            // --- DATA RESCUE FUNCTION ---
-            const handleForceRestore = async () => {
-                if(!user) return alert("Please login first.");
+            // --- MANUAL RESTORE HANDLER ---
+            const handleManualRestore = (jsonString) => {
                 try {
-                    const ref = doc(db, syncId ? "groups" : "users", syncId || user.uid);
-                    const snap = await getDoc(ref);
-                    if (snap.exists()) {
-                        const cloudData = snap.data();
-                        if (confirm(`Found ${cloudData.cashflow ? cloudData.cashflow.length : 0} transactions on Cloud. Overwrite local App data?`)) {
-                            if(!cloudData.categories) cloudData.categories = DEFAULT_CATEGORIES;
-                            setData(cloudData);
-                            alert("Data Restored Successfully!");
-                        }
-                    } else {
-                        alert("No data found on Cloud for this Account/Group ID.");
+                    const parsed = JSON.parse(jsonString);
+                    if (confirm("This will overwrite current app data with the pasted data. Continue?")) {
+                        // Ensure minimal structure
+                        if(!parsed.categories) parsed.categories = DEFAULT_CATEGORIES;
+                        if(!parsed.cashflow) parsed.cashflow = [];
+                        
+                        setData(parsed);
+                        alert("Data Restored Successfully!");
                     }
                 } catch (e) {
-                    alert("Error checking cloud: " + e.message);
+                    alert("Invalid Data Format. Please copy the entire JSON object from Firebase Console.");
                 }
             };
 
@@ -296,7 +285,7 @@
                         <NavBtn id="debts" icon={<Icons.NavDebt />} label="Debts" active={activeTab} set={setActiveTab} />
                         <NavBtn id="assets" icon={<Icons.NavAsset />} label="Assets" active={activeTab} set={setActiveTab} />
                     </div>
-                    {showSettings && <SettingsModal user={user} syncId={syncId} data={data} onSetSyncId={handleSetSyncId} onForceRestore={handleForceRestore} onLogin={handleLogin} onLogout={handleLogout} currentPin={data.settings?.pin} darkMode={darkMode} onSave={(s) => { updateSettings(s); setDarkMode(s.darkMode); }} onClose={() => setShowSettings(false)} />}
+                    {showSettings && <SettingsModal user={user} syncId={syncId} data={data} onSetSyncId={handleSetSyncId} onManualRestore={handleManualRestore} onLogin={handleLogin} onLogout={handleLogout} currentPin={data.settings?.pin} darkMode={darkMode} onSave={(s) => { updateSettings(s); setDarkMode(s.darkMode); }} onClose={() => setShowSettings(false)} />}
                 </div>
             );
         }
@@ -321,26 +310,18 @@
             );
         }
 
-        function SettingsModal({ user, syncId, data, onSetSyncId, onForceRestore, onLogin, onLogout, currentPin, darkMode, onSave, onClose }) {
+        function SettingsModal({ user, syncId, data, onSetSyncId, onManualRestore, onLogin, onLogout, currentPin, darkMode, onSave, onClose }) {
             const [isPinEnabled, setIsPinEnabled] = useState(!!currentPin);
             const [pin, setPin] = useState(currentPin || '');
             const [isDark, setIsDark] = useState(darkMode);
             const [tempSyncId, setTempSyncId] = useState(syncId);
-            const [cloudCheckStatus, setCloudCheckStatus] = useState('');
+            const [manualData, setManualData] = useState('');
 
             const handleSave = () => {
                 if (isPinEnabled && pin.length !== 4) return alert("PIN must be 4 digits");
                 onSetSyncId(tempSyncId);
                 onSave({ pin: isPinEnabled ? pin : null, darkMode: isDark });
                 onClose();
-            };
-
-            const handleCheckCloud = async () => {
-                setCloudCheckStatus('Checking...');
-                // Trigger the parent function but don't restore yet, just alert
-                // For simplicity in this rescue tool, we'll just use the Restore function which confirms first.
-                onForceRestore();
-                setCloudCheckStatus('');
             };
 
             return (
@@ -367,12 +348,18 @@
                             )}
                         </div>
 
-                        {/* DATA RESCUE ZONE */}
-                        <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-xl">
-                            <h4 className="font-bold text-yellow-800 dark:text-yellow-200 mb-2 flex items-center gap-2 text-sm">⚠️ Data Recovery Zone</h4>
-                            <p className="text-[10px] text-yellow-700 dark:text-yellow-300 mb-3">If your data is missing, click below to pull from cloud.</p>
-                            <button onClick={handleCheckCloud} className="w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-sm">
-                                <Icons.CloudDownload /> Check & Restore Cloud Data
+                        {/* MANUAL RESTORE */}
+                        <div className="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-xl">
+                            <h4 className="font-bold text-purple-800 dark:text-purple-200 mb-2 flex items-center gap-2 text-sm">📥 Manual Data Restore</h4>
+                            <p className="text-[10px] text-purple-700 dark:text-purple-300 mb-3">Paste data copied from Firebase Console here:</p>
+                            <textarea 
+                                value={manualData}
+                                onChange={e => setManualData(e.target.value)}
+                                placeholder='Paste JSON data here (e.g. {"cashflow": [...]})'
+                                className="w-full h-20 p-2 bg-white dark:bg-slate-900 text-[10px] rounded border border-purple-200 mb-2 font-mono"
+                            ></textarea>
+                            <button onClick={() => onManualRestore(manualData)} className="w-full py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-sm">
+                                <Icons.CloudUpload /> Import Data
                             </button>
                         </div>
 
@@ -406,8 +393,9 @@
             );
         }
 
-        // --- DASHBOARD, BUDGET, CASHFLOW, ASSETS (REMAIN SAME AS V16) ---
-        // (Copying the same V16 logic for tabs to ensure functionality)
+        // --- DASHBOARD, BUDGET, CASHFLOW, ASSETS ---
+        // (Re-using exact V16 components for consistency)
+        
         function DashboardTab({ data, user, onLogin, syncId }) {
             const cashOnHand = (data.cashflow || []).filter(i=>i.type==='income').reduce((s,i)=>s+safeNum(i.amount),0) - (data.cashflow || []).filter(i=>i.type==='expense').reduce((s,i)=>s+safeNum(i.amount),0);
             const assetsUsd = (data.assets || []).filter(i=>i.currency==='$').reduce((s,i)=>s+safeNum(i.amount),0);
@@ -425,36 +413,16 @@
             return (
                 <div className="space-y-4 animate-slideUp pb-10">
                     <div className="bg-gradient-to-br from-primary to-primaryDark text-white p-6 rounded-[2rem] shadow-2xl shadow-primary/30 relative overflow-hidden">
-                        <div className="flex justify-between items-start mb-3">
-                            <h2 className="text-primaryLight text-xs font-bold tracking-widest uppercase">Net Worth Breakdown</h2>
-                            {syncId && <div className="px-2 py-0.5 bg-white/20 rounded text-[10px] font-bold flex items-center gap-1"><Icons.Users className="w-3 h-3"/> Group: {syncId}</div>}
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div><p className="text-[10px] text-primaryLight uppercase">SGD ($)</p><div className="text-2xl font-black tracking-tight">${(cashOnHand + assetsUsd + debtsUsd).toLocaleString()}</div></div>
-                            <div className="text-right border-l border-white/20 pl-4"><p className="text-[10px] text-primaryLight uppercase">MMK (Ks)</p><div className="text-2xl font-black tracking-tight">{(assetsKs + debtsKs).toLocaleString()}</div></div>
-                        </div>
+                        <div className="flex justify-between items-start mb-3"><h2 className="text-primaryLight text-xs font-bold tracking-widest uppercase">Net Worth Breakdown</h2>{syncId && <div className="px-2 py-0.5 bg-white/20 rounded text-[10px] font-bold flex items-center gap-1"><Icons.Users className="w-3 h-3"/> Group: {syncId}</div>}</div>
+                        <div className="grid grid-cols-2 gap-4"><div><p className="text-[10px] text-primaryLight uppercase">SGD ($)</p><div className="text-2xl font-black tracking-tight">${(cashOnHand + assetsUsd + debtsUsd).toLocaleString()}</div></div><div className="text-right border-l border-white/20 pl-4"><p className="text-[10px] text-primaryLight uppercase">MMK (Ks)</p><div className="text-2xl font-black tracking-tight">{(assetsKs + debtsKs).toLocaleString()}</div></div></div>
                         <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center"><span className="text-xs font-medium text-primaryLight">Liquid Cash (SGD)</span><span className="text-lg font-bold">${cashOnHand.toLocaleString()}</span></div>
                     </div>
                     <div className="flex gap-3">
-                        <div className="flex-1 bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-center">
-                            <div className="flex items-center gap-2 mb-1"><div className="p-1.5 bg-green-100 text-green-600 rounded-lg"><Icons.ArrowUp /></div><span className="text-xs font-bold text-slate-400 uppercase">Income</span></div>
-                            <div className="text-xl font-black text-slate-800 dark:text-white tracking-tight">${incomeMonth.toLocaleString()}</div>
-                        </div>
-                        <div className="flex-1 bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-center">
-                            <div className="flex items-center gap-2 mb-1"><div className="p-1.5 bg-red-100 text-red-600 rounded-lg"><Icons.ArrowDown /></div><span className="text-xs font-bold text-slate-400 uppercase">Expense</span></div>
-                            <div className="text-xl font-black text-slate-800 dark:text-white tracking-tight">${expenseMonth.toLocaleString()}</div>
-                        </div>
+                        <div className="flex-1 bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-center"><div className="flex items-center gap-2 mb-1"><div className="p-1.5 bg-green-100 text-green-600 rounded-lg"><Icons.ArrowUp /></div><span className="text-xs font-bold text-slate-400 uppercase">Income</span></div><div className="text-xl font-black text-slate-800 dark:text-white tracking-tight">${incomeMonth.toLocaleString()}</div></div>
+                        <div className="flex-1 bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-center"><div className="flex items-center gap-2 mb-1"><div className="p-1.5 bg-red-100 text-red-600 rounded-lg"><Icons.ArrowDown /></div><span className="text-xs font-bold text-slate-400 uppercase">Expense</span></div><div className="text-xl font-black text-slate-800 dark:text-white tracking-tight">${expenseMonth.toLocaleString()}</div></div>
                     </div>
-                    <div className="bg-white dark:bg-darkCard p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-                        <h3 className="text-xs font-bold text-slate-400 uppercase mb-4 text-center">Spending by Category ({monthName})</h3>
-                        <SimpleDonutChart data={chartData} />
-                    </div>
-                    {!user && (
-                        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800 p-4 rounded-xl flex items-center justify-between">
-                            <div><h4 className="font-bold text-orange-800 dark:text-orange-200 text-sm">Data Not Synced</h4><p className="text-xs text-orange-600 dark:text-orange-300">Login to backup your data.</p></div>
-                            <button onClick={onLogin} className="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md">Login</button>
-                        </div>
-                    )}
+                    <div className="bg-white dark:bg-darkCard p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800"><h3 className="text-xs font-bold text-slate-400 uppercase mb-4 text-center">Spending by Category ({monthName})</h3><SimpleDonutChart data={chartData} /></div>
+                    {!user && (<div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800 p-4 rounded-xl flex items-center justify-between"><div><h4 className="font-bold text-orange-800 dark:text-orange-200 text-sm">Data Not Synced</h4><p className="text-xs text-orange-600 dark:text-orange-300">Login to backup your data.</p></div><button onClick={onLogin} className="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md">Login</button></div>)}
                 </div>
             );
         }
@@ -472,41 +440,8 @@
             return (
                 <div className="pb-20 animate-slideUp">
                     <div className="flex justify-between items-center mb-4 px-2"><h2 className="text-lg font-bold text-slate-700 dark:text-white">Monthly Budgets</h2><button onClick={()=>setShowAdd(true)} className="text-primary text-sm font-bold bg-primary/10 px-3 py-1 rounded-lg">+ Add New</button></div>
-                    <div className="space-y-4">
-                        {(data.budgets || []).length === 0 ? <p className="text-center text-slate-400 text-sm py-10">No budgets set. Create one to track spending.</p> :
-                        (data.budgets || []).map(b => {
-                            const spent = expenses.filter(e => e.category === b.name).reduce((s, e) => s + safeNum(e.amount), 0);
-                            const limitVal = safeNum(b.limit);
-                            const percent = Math.min((spent / limitVal) * 100, 100);
-                            const isOver = spent > limitVal;
-                            const isNear = percent > 80;
-                            const colorClass = isOver ? 'bg-danger' : (isNear ? 'bg-warning' : 'bg-success');
-                            const { icon, color } = getCatInfo(b.name);
-                            const IconComp = Icons[icon] || Icons.Tag;
-
-                            return (
-                                <div key={b.id} className="bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: color }}><IconComp className="w-5 h-5" /></div><div><h4 className="font-bold text-slate-800 dark:text-white text-base">{b.name}</h4><p className="text-[10px] text-slate-400">Limit: ${limitVal.toLocaleString()}</p></div></div>
-                                        <div className="text-right"><div className={`font-black text-lg ${isOver ? 'text-danger' : (isNear ? 'text-warning' : 'text-success')}`}>${spent.toLocaleString()}</div>{isOver && <div className="text-[10px] font-bold text-white bg-danger px-1.5 py-0.5 rounded animate-pulse inline-block">OVER!</div>}</div>
-                                    </div>
-                                    <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden"><div className={`h-full rounded-full ${colorClass} progress-bar`} style={{width: `${percent}%`}}></div></div>
-                                    <button onClick={()=>onDelete(b.id)} className="absolute top-2 right-2 p-1 text-slate-300 hover:text-danger opacity-0 hover:opacity-100 transition-opacity"><Icons.X /></button>
-                                </div>
-                            );
-                        })}
-                    </div>
-                    {showAdd && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                            <div className="bg-white dark:bg-darkCard w-[90%] max-w-sm p-6 rounded-2xl shadow-2xl animate-slideUp">
-                                <h3 className="font-bold mb-4 text-slate-800 dark:text-white">New Budget</h3>
-                                <div className="mb-4"><label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Select Category</label><div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto hide-scroll">{expenseCats.map(c => { const IconComp = Icons[c.icon] || Icons.Tag; const isSelected = selectedCat === c.name; return (<button key={c.id} onClick={() => setSelectedCat(c.name)} className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all ${isSelected ? 'border-primary bg-primary/5' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-700'}`}><div className="w-8 h-8 rounded-full flex items-center justify-center text-white mb-1" style={{backgroundColor: c.color}}><IconComp className="w-4 h-4" /></div><span className={`text-[9px] font-bold truncate w-full text-center ${isSelected ? 'text-primary' : 'text-slate-500'}`}>{c.name}</span></button>); })}</div></div>
-                                <input placeholder="Monthly Limit ($)" type="number" className="w-full p-4 mb-4 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none font-bold" value={limit} onChange={e=>setLimit(e.target.value)}/>
-                                <button onClick={handleAdd} className="w-full bg-primary text-white py-3 rounded-xl font-bold">Create Budget</button>
-                                <button onClick={()=>setShowAdd(false)} className="w-full mt-2 text-slate-400 text-sm">Cancel</button>
-                            </div>
-                        </div>
-                    )}
+                    <div className="space-y-4">{(data.budgets || []).length === 0 ? <p className="text-center text-slate-400 text-sm py-10">No budgets set. Create one to track spending.</p> : (data.budgets || []).map(b => { const spent = expenses.filter(e => e.category === b.name).reduce((s, e) => s + safeNum(e.amount), 0); const limitVal = safeNum(b.limit); const percent = Math.min((spent / limitVal) * 100, 100); const isOver = spent > limitVal; const isNear = percent > 80; const colorClass = isOver ? 'bg-danger' : (isNear ? 'bg-warning' : 'bg-success'); const { icon, color } = getCatInfo(b.name); const IconComp = Icons[icon] || Icons.Tag; return (<div key={b.id} className="bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden"><div className="flex justify-between items-center mb-3"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: color }}><IconComp className="w-5 h-5" /></div><div><h4 className="font-bold text-slate-800 dark:text-white text-base">{b.name}</h4><p className="text-[10px] text-slate-400">Limit: ${limitVal.toLocaleString()}</p></div></div><div className="text-right"><div className={`font-black text-lg ${isOver ? 'text-danger' : (isNear ? 'text-warning' : 'text-success')}`}>${spent.toLocaleString()}</div>{isOver && <div className="text-[10px] font-bold text-white bg-danger px-1.5 py-0.5 rounded animate-pulse inline-block">OVER!</div>}</div></div><div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden"><div className={`h-full rounded-full ${colorClass} progress-bar`} style={{width: `${percent}%`}}></div></div><button onClick={()=>onDelete(b.id)} className="absolute top-2 right-2 p-1 text-slate-300 hover:text-danger opacity-0 hover:opacity-100 transition-opacity"><Icons.X /></button></div>); })}</div>
+                    {showAdd && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"><div className="bg-white dark:bg-darkCard w-[90%] max-w-sm p-6 rounded-2xl shadow-2xl animate-slideUp"><h3 className="font-bold mb-4 text-slate-800 dark:text-white">New Budget</h3><div className="mb-4"><label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Select Category</label><div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto hide-scroll">{expenseCats.map(c => { const IconComp = Icons[c.icon] || Icons.Tag; const isSelected = selectedCat === c.name; return (<button key={c.id} onClick={() => setSelectedCat(c.name)} className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all ${isSelected ? 'border-primary bg-primary/5' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-700'}`}><div className="w-8 h-8 rounded-full flex items-center justify-center text-white mb-1" style={{backgroundColor: c.color}}><IconComp className="w-4 h-4" /></div><span className={`text-[9px] font-bold truncate w-full text-center ${isSelected ? 'text-primary' : 'text-slate-500'}`}>{c.name}</span></button>); })}</div></div><input placeholder="Monthly Limit ($)" type="number" className="w-full p-4 mb-4 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none font-bold" value={limit} onChange={e=>setLimit(e.target.value)}/><button onClick={handleAdd} className="w-full bg-primary text-white py-3 rounded-xl font-bold">Create Budget</button><button onClick={()=>setShowAdd(false)} className="w-full mt-2 text-slate-400 text-sm">Cancel</button></div></div>)}
                 </div>
             );
         }
@@ -519,10 +454,7 @@
             const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7));
             const monthData = (data || []).filter(item => item.date && item.date.startsWith(currentMonth));
             const filtered = monthData.sort((a,b) => new Date(b.date) - new Date(a.date)).filter(i => filter === 'all' || i.type === filter);
-            const grouped = filtered.reduce((groups, item) => {
-                const d = new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                if (!groups[d]) groups[d] = []; groups[d].push(item); return groups;
-            }, {});
+            const grouped = filtered.reduce((groups, item) => { const d = new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); if (!groups[d]) groups[d] = []; groups[d].push(item); return groups; }, {});
             const changeMonth = (d) => { const date = new Date(currentMonth + '-01'); date.setMonth(date.getMonth() + d); setCurrentMonth(date.toISOString().slice(0, 7)); };
             const formatMonth = (ym) => { const [y, m] = ym.split('-'); return new Date(y, m - 1).toLocaleString('default', { month: 'long', year: 'numeric' }); };
             const getCategoryIcon = (catName) => { const found = categories.find(c => c.name === catName); if (found && Icons[found.icon]) { const IconComp = Icons[found.icon]; return <IconComp className="w-5 h-5 text-white" />; } return <span className="text-white font-bold text-xs">{catName.charAt(0)}</span>; };
@@ -530,39 +462,9 @@
 
             return (
                 <div className="pb-20 space-y-4 animate-slideUp">
-                    <div className="flex justify-between items-center">
-                        <div className="flex bg-white dark:bg-darkCard p-2 rounded-xl shadow-sm items-center gap-2">
-                             <button onClick={() => changeMonth(-1)}><Icons.Left className="w-4 h-4 text-slate-400 hover:text-primary"/></button>
-                             <div className="font-bold text-slate-700 dark:text-white text-sm w-24 text-center">{formatMonth(currentMonth)}</div>
-                             <button onClick={() => changeMonth(1)}><Icons.Right className="w-4 h-4 text-slate-400 hover:text-primary"/></button>
-                        </div>
-                        <button onClick={() => setIsCategoryManagerOpen(true)} className="px-3 py-2 bg-primary/10 text-primary rounded-xl text-xs font-bold flex items-center gap-1 hover:bg-primary hover:text-white transition-colors">
-                            <Icons.Tag className="w-4 h-4" /> Categories
-                        </button>
-                    </div>
-                    <div className="flex bg-gray-200 dark:bg-slate-800 p-1 rounded-xl">
-                        {['all', 'income', 'expense'].map(t => (
-                            <button key={t} onClick={() => setFilter(t)} className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase transition-all ${filter === t ? 'bg-white dark:bg-darkCard shadow text-primary dark:text-white' : 'text-slate-500'}`}>{t}</button>
-                        ))}
-                    </div>
-                    {Object.keys(grouped).length === 0 ? <div className="text-center py-20 text-slate-400 text-sm">No records found</div> : 
-                        Object.keys(grouped).map(date => (
-                            <div key={date}>
-                                <h3 className="text-xs font-bold text-slate-400 mb-2 pl-1">{date}</h3>
-                                <div className="bg-white dark:bg-darkCard rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                                    {grouped[date].map((item, idx) => (
-                                        <div key={item.id} className={`p-4 flex justify-between items-center ${idx !== grouped[date].length-1 ? 'border-b border-slate-50 dark:border-slate-800' : ''}`}>
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm" style={{ backgroundColor: getCategoryColor(item.category) }}>{getCategoryIcon(item.category)}</div>
-                                                <div><h4 className="font-bold text-slate-700 dark:text-slate-200 text-sm">{item.title}</h4>{item.category && <span className="text-[10px] bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-500">{item.category}</span>}</div>
-                                            </div>
-                                            <div className="flex items-center gap-3"><span className={`font-bold text-sm ${item.type==='income'?'text-success':'text-slate-700 dark:text-slate-300'}`}>{item.type==='income'?'+':'-'}${safeNum(item.amount).toLocaleString()}</span><button onClick={() => { setEditItem(item); setIsOpen(true); }} className="p-1 bg-slate-50 dark:bg-slate-700 rounded text-slate-400 hover:text-primary"><Icons.Pencil className="w-3 h-3"/></button><button onClick={() => onDelete(item.id)} className="p-1 bg-slate-50 dark:bg-slate-700 rounded text-slate-400 hover:text-danger"><Icons.Trash className="w-3 h-3"/></button></div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ))
-                    }
+                    <div className="flex justify-between items-center"><div className="flex bg-white dark:bg-darkCard p-2 rounded-xl shadow-sm items-center gap-2"><button onClick={() => changeMonth(-1)}><Icons.Left className="w-4 h-4 text-slate-400 hover:text-primary"/></button><div className="font-bold text-slate-700 dark:text-white text-sm w-24 text-center">{formatMonth(currentMonth)}</div><button onClick={() => changeMonth(1)}><Icons.Right className="w-4 h-4 text-slate-400 hover:text-primary"/></button></div><button onClick={() => setIsCategoryManagerOpen(true)} className="px-3 py-2 bg-primary/10 text-primary rounded-xl text-xs font-bold flex items-center gap-1 hover:bg-primary hover:text-white transition-colors"><Icons.Tag className="w-4 h-4" /> Categories</button></div>
+                    <div className="flex bg-gray-200 dark:bg-slate-800 p-1 rounded-xl">{['all', 'income', 'expense'].map(t => (<button key={t} onClick={() => setFilter(t)} className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase transition-all ${filter === t ? 'bg-white dark:bg-darkCard shadow text-primary dark:text-white' : 'text-slate-500'}`}>{t}</button>))}</div>
+                    {Object.keys(grouped).length === 0 ? <div className="text-center py-20 text-slate-400 text-sm">No records found</div> : Object.keys(grouped).map(date => (<div key={date}><h3 className="text-xs font-bold text-slate-400 mb-2 pl-1">{date}</h3><div className="bg-white dark:bg-darkCard rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">{grouped[date].map((item, idx) => (<div key={item.id} className={`p-4 flex justify-between items-center ${idx !== grouped[date].length-1 ? 'border-b border-slate-50 dark:border-slate-800' : ''}`}><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm" style={{ backgroundColor: getCategoryColor(item.category) }}>{getCategoryIcon(item.category)}</div><div><h4 className="font-bold text-slate-700 dark:text-slate-200 text-sm">{item.title}</h4>{item.category && <span className="text-[10px] bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-500">{item.category}</span>}</div></div><div className="flex items-center gap-3"><span className={`font-bold text-sm ${item.type==='income'?'text-success':'text-slate-700 dark:text-slate-300'}`}>{item.type==='income'?'+':'-'}${safeNum(item.amount).toLocaleString()}</span><button onClick={() => { setEditItem(item); setIsOpen(true); }} className="p-1 bg-slate-50 dark:bg-slate-700 rounded text-slate-400 hover:text-primary"><Icons.Pencil className="w-3 h-3"/></button><button onClick={() => onDelete(item.id)} className="p-1 bg-slate-50 dark:bg-slate-700 rounded text-slate-400 hover:text-danger"><Icons.Trash className="w-3 h-3"/></button></div></div>))}</div></div>))}
                     <button onClick={() => { setEditItem(null); setIsOpen(true); }} className="fixed bottom-24 right-5 w-14 h-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center hover:scale-105 z-20"><Icons.Plus /></button>
                     {isOpen && <TransactionModal initialData={editItem} categories={categories} onClose={() => setIsOpen(false)} onSave={(data) => { if(editItem) onUpdate(editItem.id, data); else onAdd(data); }} />}
                     {isCategoryManagerOpen && <CategoryManager categories={categories} onAdd={onAddCategory} onDelete={onDeleteCategory} onClose={() => setIsCategoryManagerOpen(false)} />}
@@ -576,38 +478,8 @@
             const [showAdd, setShowAdd] = useState(false);
             const incomes = categories.filter(c => c.type === 'income');
             const expenses = categories.filter(c => c.type === 'expense');
-
-            const CategoryRow = ({ item }) => {
-                const IconComp = Icons[item.icon] || Icons.Tag;
-                return (
-                    <div className="flex items-center justify-between p-3 border-b border-slate-50 dark:border-slate-800 last:border-0">
-                        <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm text-white" style={{ backgroundColor: item.color }}><IconComp className="w-5 h-5" /></div><span className="font-bold text-slate-700 dark:text-white text-sm">{item.name}</span></div>
-                        <button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-danger"><Icons.MoreDots /></button>
-                    </div>
-                );
-            };
-
-            return (
-                <div className="fixed inset-0 z-50 bg-white dark:bg-darkCard animate-slideUp overflow-auto">
-                     <div className="sticky top-0 bg-white dark:bg-darkCard p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 z-10"><h2 className="text-xl font-bold text-slate-800 dark:text-white">Create Categories</h2><button onClick={onClose} className="p-2 bg-slate-100 dark:bg-slate-700 rounded-full"><Icons.X /></button></div>
-                    <div className="p-5 pb-24">
-                        <h3 className="text-primary font-bold text-sm uppercase mb-3 mt-2">Income categories</h3>
-                        <div className="bg-white dark:bg-slate-800/50 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">{incomes.map(c => <CategoryRow key={c.id} item={c} />)}<button onClick={() => { setNewCatType('income'); setShowAdd(true); }} className="w-full py-3 text-center text-primary font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 rounded-b-2xl">+ Add Income Category</button></div>
-                        <h3 className="text-primary font-bold text-sm uppercase mb-3 mt-8">Expense categories</h3>
-                        <div className="bg-white dark:bg-slate-800/50 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">{expenses.map(c => <CategoryRow key={c.id} item={c} />)}<button onClick={() => { setNewCatType('expense'); setShowAdd(true); }} className="w-full py-3 text-center text-primary font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 rounded-b-2xl">+ Add Expense Category</button></div>
-                    </div>
-                    {showAdd && (
-                         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                            <div className="bg-white dark:bg-darkCard w-[85%] p-6 rounded-2xl shadow-2xl animate-slideUp">
-                                <h3 className="font-bold mb-4 text-slate-800 dark:text-white">New {newCatType} Category</h3>
-                                <input autoFocus placeholder="Name (e.g. Freelance)" className="w-full p-3 mb-4 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none font-bold" value={newCatName} onChange={e=>setNewCatName(e.target.value)}/>
-                                <div className="grid grid-cols-5 gap-2 mb-6">{['#ef4444', '#f97316', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#64748b', '#000000'].map(c => (<div key={c} onClick={() => { const icon = newCatType==='income'?'Wallet':'Tag'; onAdd({ name: newCatName, type: newCatType, color: c, icon }); setShowAdd(false); setNewCatName(''); }} className="h-8 w-8 rounded-full cursor-pointer hover:scale-110 transition-transform" style={{backgroundColor: c}}></div>))}</div>
-                                <button onClick={() => setShowAdd(false)} className="w-full py-3 bg-slate-100 dark:bg-slate-700 text-slate-500 rounded-xl font-bold">Cancel</button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
+            const CategoryRow = ({ item }) => { const IconComp = Icons[item.icon] || Icons.Tag; return (<div className="flex items-center justify-between p-3 border-b border-slate-50 dark:border-slate-800 last:border-0"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm text-white" style={{ backgroundColor: item.color }}><IconComp className="w-5 h-5" /></div><span className="font-bold text-slate-700 dark:text-white text-sm">{item.name}</span></div><button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-danger"><Icons.MoreDots /></button></div>); };
+            return (<div className="fixed inset-0 z-50 bg-white dark:bg-darkCard animate-slideUp overflow-auto"><div className="sticky top-0 bg-white dark:bg-darkCard p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 z-10"><h2 className="text-xl font-bold text-slate-800 dark:text-white">Create Categories</h2><button onClick={onClose} className="p-2 bg-slate-100 dark:bg-slate-700 rounded-full"><Icons.X /></button></div><div className="p-5 pb-24"><h3 className="text-primary font-bold text-sm uppercase mb-3 mt-2">Income categories</h3><div className="bg-white dark:bg-slate-800/50 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">{incomes.map(c => <CategoryRow key={c.id} item={c} />)}<button onClick={() => { setNewCatType('income'); setShowAdd(true); }} className="w-full py-3 text-center text-primary font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 rounded-b-2xl">+ Add Income Category</button></div><h3 className="text-primary font-bold text-sm uppercase mb-3 mt-8">Expense categories</h3><div className="bg-white dark:bg-slate-800/50 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">{expenses.map(c => <CategoryRow key={c.id} item={c} />)}<button onClick={() => { setNewCatType('expense'); setShowAdd(true); }} className="w-full py-3 text-center text-primary font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 rounded-b-2xl">+ Add Expense Category</button></div></div>{showAdd && (<div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"><div className="bg-white dark:bg-darkCard w-[85%] p-6 rounded-2xl shadow-2xl animate-slideUp"><h3 className="font-bold mb-4 text-slate-800 dark:text-white">New {newCatType} Category</h3><input autoFocus placeholder="Name (e.g. Freelance)" className="w-full p-3 mb-4 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none font-bold" value={newCatName} onChange={e=>setNewCatName(e.target.value)}/><div className="grid grid-cols-5 gap-2 mb-6">{['#ef4444', '#f97316', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#64748b', '#000000'].map(c => (<div key={c} onClick={() => { const icon = newCatType==='income'?'Wallet':'Tag'; onAdd({ name: newCatName, type: newCatType, color: c, icon }); setShowAdd(false); setNewCatName(''); }} className="h-8 w-8 rounded-full cursor-pointer hover:scale-110 transition-transform" style={{backgroundColor: c}}></div>))}</div><button onClick={() => setShowAdd(false)} className="w-full py-3 bg-slate-100 dark:bg-slate-700 text-slate-500 rounded-xl font-bold">Cancel</button></div></div>)}</div>);
         }
 
         function TransactionModal({ initialData, categories, onClose, onSave }) {
@@ -616,22 +488,7 @@
             const [isMath, setIsMath] = useState(false);
             const availableCats = categories.filter(c => c.type === form.type);
             const handleSave = () => { if (!form.amount || !form.category) return alert("Please enter amount and category"); const finalTitle = form.description.trim() || form.category; onSave({ ...form, title: finalTitle }); onClose(); };
-
-            return (
-                <div className="fixed inset-0 z-50 flex items-start justify-center pt-10">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
-                    <div className="bg-white dark:bg-darkCard w-[95%] max-w-md rounded-2xl p-5 shadow-2xl z-10 relative animate-slideUp">
-                        <div className="flex justify-between items-center mb-4"><h3 className="text-lg font-bold text-slate-800 dark:text-white">{initialData ? 'Edit Transaction' : 'Add Transaction'}</h3><button onClick={onClose} className="p-1 bg-slate-100 dark:bg-slate-700 rounded-full"><Icons.X /></button></div>
-                        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-4"><button onClick={() => setForm({...form, type:'expense', category: ''})} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${form.type === 'expense' ? 'bg-white dark:bg-darkCard shadow text-slate-800 dark:text-white' : 'text-slate-400'}`}>Expense</button><button onClick={() => setForm({...form, type:'income', category: ''})} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${form.type === 'income' ? 'bg-white dark:bg-darkCard shadow text-success' : 'text-slate-400'}`}>Income</button></div>
-                        <div className="space-y-4 mb-4">
-                            <div><input type="text" autoFocus placeholder="0" className="w-full p-4 bg-slate-50 dark:bg-slate-800 dark:text-white rounded-xl text-3xl text-center font-black border-2 border-transparent focus:border-primary outline-none" value={form.amount} onChange={e => { setForm({...form, amount:e.target.value}); setIsMath(e.target.value.includes('+')); }} />{isMath && <p className="text-xs text-primary text-center mt-1 font-medium">Auto-sum: {calculateSafe(form.amount)}</p>}</div>
-                            <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Category</label><div className="grid grid-cols-4 gap-2">{availableCats.map(c => { const IconComp = Icons[c.icon] || Icons.Tag; const isSelected = form.category === c.name; return (<button key={c.id} onClick={() => setForm({...form, category: c.name})} className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all ${isSelected ? 'border-primary bg-primary/5' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-700'}`}><div className="w-8 h-8 rounded-full flex items-center justify-center text-white mb-1" style={{backgroundColor: c.color}}><IconComp className="w-4 h-4" /></div><span className={`text-[9px] font-bold truncate w-full text-center ${isSelected ? 'text-primary' : 'text-slate-500'}`}>{c.name}</span></button>); })}</div></div>
-                            <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Description (Optional)</label><textarea rows="2" placeholder="What is this for? (e.g. Lunch with Mom)" className="w-full p-3 bg-slate-50 dark:bg-slate-800 dark:text-white rounded-xl text-sm font-medium border-none resize-none focus:ring-2 focus:ring-primary/20" value={form.description} onChange={e => setForm({...form, description:e.target.value})}></textarea></div>
-                        </div>
-                        <button onClick={handleSave} className="w-full bg-primary text-white py-4 rounded-2xl font-bold text-lg shadow-lg active:scale-95">Save Record</button>
-                    </div>
-                </div>
-            );
+            return (<div className="fixed inset-0 z-50 flex items-start justify-center pt-10"><div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div><div className="bg-white dark:bg-darkCard w-[95%] max-w-md rounded-2xl p-5 shadow-2xl z-10 relative animate-slideUp"><div className="flex justify-between items-center mb-4"><h3 className="text-lg font-bold text-slate-800 dark:text-white">{initialData ? 'Edit Transaction' : 'Add Transaction'}</h3><button onClick={onClose} className="p-1 bg-slate-100 dark:bg-slate-700 rounded-full"><Icons.X /></button></div><div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-4"><button onClick={() => setForm({...form, type:'expense', category: ''})} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${form.type === 'expense' ? 'bg-white dark:bg-darkCard shadow text-slate-800 dark:text-white' : 'text-slate-400'}`}>Expense</button><button onClick={() => setForm({...form, type:'income', category: ''})} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${form.type === 'income' ? 'bg-white dark:bg-darkCard shadow text-success' : 'text-slate-400'}`}>Income</button></div><div className="space-y-4 mb-4"><div><input type="text" autoFocus placeholder="0" className="w-full p-4 bg-slate-50 dark:bg-slate-800 dark:text-white rounded-xl text-3xl text-center font-black border-2 border-transparent focus:border-primary outline-none" value={form.amount} onChange={e => { setForm({...form, amount:e.target.value}); setIsMath(e.target.value.includes('+')); }} />{isMath && <p className="text-xs text-primary text-center mt-1 font-medium">Auto-sum: {calculateSafe(form.amount)}</p>}</div><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Category</label><div className="grid grid-cols-4 gap-2">{availableCats.map(c => { const IconComp = Icons[c.icon] || Icons.Tag; const isSelected = form.category === c.name; return (<button key={c.id} onClick={() => setForm({...form, category: c.name})} className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all ${isSelected ? 'border-primary bg-primary/5' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-700'}`}><div className="w-8 h-8 rounded-full flex items-center justify-center text-white mb-1" style={{backgroundColor: c.color}}><IconComp className="w-4 h-4" /></div><span className={`text-[9px] font-bold truncate w-full text-center ${isSelected ? 'text-primary' : 'text-slate-500'}`}>{c.name}</span></button>); })}</div></div><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Description (Optional)</label><textarea rows="2" placeholder="What is this for? (e.g. Lunch with Mom)" className="w-full p-3 bg-slate-50 dark:bg-slate-800 dark:text-white rounded-xl text-sm font-medium border-none resize-none focus:ring-2 focus:ring-primary/20" value={form.description} onChange={e => setForm({...form, description:e.target.value})}></textarea></div></div><button onClick={handleSave} className="w-full bg-primary text-white py-4 rounded-2xl font-bold text-lg shadow-lg active:scale-95">Save Record</button></div></div>);
         }
 
         function DebtsTab({ data, onAdd, onUpdate, onDelete }) {
@@ -642,34 +499,14 @@
             const filtered = data.filter(i => i.type === view);
             const [form, setForm] = useState({ name: '', amount: '', currency: 'Ks', note: '' });
             const handleRepayment = () => { if(!repayAmount) return; const amountToAdd = parseFloat(calculateSafe(repayAmount)); const currentPaid = parseFloat(repayItem.paid || 0); const newPaid = currentPaid + amountToAdd; onUpdate(repayItem.id, { paid: newPaid }); setRepayItem(null); setRepayAmount(''); };
-            return (
-                <div className="pb-20 animate-slideUp">
-                    <div className="flex bg-white dark:bg-darkCard p-1 rounded-xl shadow-sm mb-4 border border-slate-100 dark:border-slate-700"><button onClick={() => setView('lent')} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${view === 'lent' ? 'bg-successBg text-success' : 'text-slate-400'}`}>To Receive</button><button onClick={() => setView('borrowed')} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${view === 'borrowed' ? 'bg-dangerBg text-danger' : 'text-slate-400'}`}>To Pay</button></div>
-                    <div className="space-y-3">{filtered.map(item => { const paid = safeNum(item.paid); const total = safeNum(item.amount); const remaining = total - paid; const percent = Math.min(100, (paid / total) * 100); const isDone = remaining <= 0; return (
-                        <div key={item.id} className={`bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 ${isDone ? 'opacity-60' : ''}`}><div className="flex justify-between items-start mb-1"><h3 className="font-bold text-slate-800 dark:text-white text-base">{item.name}</h3><span className={`font-bold text-lg ${view==='lent'?'text-success':'text-danger'}`}>{total.toLocaleString()} <span className="text-xs text-slate-400">{item.currency}</span></span></div>{item.note && <p className="text-xs text-slate-400 italic mb-3">"{item.note}"</p>}<div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full mb-3 overflow-hidden"><div className={`h-full rounded-full ${view==='lent'?'bg-success':'bg-danger'}`} style={{width: `${percent}%`}}></div></div><div className="flex justify-between items-end"><div className="flex gap-3 text-xs font-medium"><span className="text-slate-400">Paid: {paid.toLocaleString()}</span><span className={`${remaining > 0 ? (view==='lent'?'text-danger':'text-danger') : 'text-success'} font-bold`}>Rem: {remaining.toLocaleString()}</span></div><div className="flex items-center gap-1"><button onClick={() => {setForm({ ...item }); setShowAddModal(true);}} className="p-2 text-slate-300 hover:text-primary"><Icons.Pencil className="w-4 h-4"/></button><button onClick={()=>onDelete(item.id)} className="p-2 text-slate-300 hover:text-danger"><Icons.Trash className="w-4 h-4"/></button>{!isDone && <button onClick={() => setRepayItem(item)} className="ml-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white rounded-lg text-xs font-bold hover:bg-slate-200">+ Pay</button>}</div></div></div>
-                    )})}</div>
-                    <button onClick={() => { setForm({ id: null, name: '', amount: '', currency: 'Ks', note: '' }); setShowAddModal(true); }} className="fixed bottom-24 right-5 w-14 h-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center hover:scale-105 z-20"><Icons.Plus /></button>
-                    {showAddModal && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"><div className="bg-white dark:bg-darkCard w-[90%] max-w-sm p-6 rounded-2xl shadow-2xl animate-slideUp"><h3 className="font-bold mb-4 text-slate-800 dark:text-white">{form.id ? 'Edit Debt' : 'Add Debt'}</h3><input placeholder="Name" className="w-full p-3 mb-3 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none" value={form.name} onChange={e=>setForm({...form, name:e.target.value})}/><div className="flex gap-2 mb-3"><input placeholder="Total Amount" className="flex-1 p-3 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none" value={form.amount} onChange={e=>setForm({...form, amount:e.target.value})}/><select className="bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl px-3" value={form.currency} onChange={e=>setForm({...form, currency:e.target.value})}><option value="Ks">Ks</option><option value="$">$</option></select></div><textarea placeholder="Note (optional)" rows="2" className="w-full p-3 mb-4 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none" value={form.note} onChange={e=>setForm({...form, note:e.target.value})}></textarea><button onClick={()=>{ if(form.id) onUpdate(form.id, form); else onAdd({...form, type:view, paid:0}); setShowAddModal(false); }} className="w-full bg-primary text-white py-3 rounded-xl font-bold">Save</button><button onClick={()=>setShowAddModal(false)} className="w-full mt-2 text-slate-400 text-sm">Cancel</button></div></div>
-                    )}
-                    {repayItem && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"><div className="bg-white dark:bg-darkCard w-[90%] max-w-sm p-6 rounded-2xl shadow-2xl animate-slideUp"><h3 className="font-bold mb-2 text-slate-800 dark:text-white">Add Payment</h3><p className="text-xs text-slate-500 dark:text-slate-400 mb-4">For: {repayItem.name}</p><input type="number" autoFocus placeholder="Enter Amount" className="w-full p-4 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl text-lg font-bold border-2 border-primary mb-4 outline-none" value={repayAmount} onChange={e=>setRepayAmount(e.target.value)}/><button onClick={handleRepayment} className="w-full bg-success text-white py-3 rounded-xl font-bold">Confirm Pay</button><button onClick={()=>{setRepayItem(null); setRepayAmount('');}} className="w-full mt-2 text-slate-400 text-sm">Cancel</button></div></div>
-                    )}
-                </div>
-            )
+            return (<div className="pb-20 animate-slideUp"><div className="flex bg-white dark:bg-darkCard p-1 rounded-xl shadow-sm mb-4 border border-slate-100 dark:border-slate-700"><button onClick={() => setView('lent')} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${view === 'lent' ? 'bg-successBg text-success' : 'text-slate-400'}`}>To Receive</button><button onClick={() => setView('borrowed')} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${view === 'borrowed' ? 'bg-dangerBg text-danger' : 'text-slate-400'}`}>To Pay</button></div><div className="space-y-3">{filtered.map(item => { const paid = safeNum(item.paid); const total = safeNum(item.amount); const remaining = total - paid; const percent = Math.min(100, (paid / total) * 100); const isDone = remaining <= 0; return (<div key={item.id} className={`bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 ${isDone ? 'opacity-60' : ''}`}><div className="flex justify-between items-start mb-1"><h3 className="font-bold text-slate-800 dark:text-white text-base">{item.name}</h3><span className={`font-bold text-lg ${view==='lent'?'text-success':'text-danger'}`}>{total.toLocaleString()} <span className="text-xs text-slate-400">{item.currency}</span></span></div>{item.note && <p className="text-xs text-slate-400 italic mb-3">"{item.note}"</p>}<div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full mb-3 overflow-hidden"><div className={`h-full rounded-full ${view==='lent'?'bg-success':'bg-danger'}`} style={{width: `${percent}%`}}></div></div><div className="flex justify-between items-end"><div className="flex gap-3 text-xs font-medium"><span className="text-slate-400">Paid: {paid.toLocaleString()}</span><span className={`${remaining > 0 ? (view==='lent'?'text-danger':'text-danger') : 'text-success'} font-bold`}>Rem: {remaining.toLocaleString()}</span></div><div className="flex items-center gap-1"><button onClick={() => {setForm({ ...item }); setShowAddModal(true);}} className="p-2 text-slate-300 hover:text-primary"><Icons.Pencil className="w-4 h-4"/></button><button onClick={()=>onDelete(item.id)} className="p-2 text-slate-300 hover:text-danger"><Icons.Trash className="w-4 h-4"/></button>{!isDone && <button onClick={() => setRepayItem(item)} className="ml-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white rounded-lg text-xs font-bold hover:bg-slate-200">+ Pay</button>}</div></div></div>)})}</div><button onClick={() => { setForm({ id: null, name: '', amount: '', currency: 'Ks', note: '' }); setShowAddModal(true); }} className="fixed bottom-24 right-5 w-14 h-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center hover:scale-105 z-20"><Icons.Plus /></button>{showAddModal && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"><div className="bg-white dark:bg-darkCard w-[90%] max-w-sm p-6 rounded-2xl shadow-2xl animate-slideUp"><h3 className="font-bold mb-4 text-slate-800 dark:text-white">{form.id ? 'Edit Debt' : 'Add Debt'}</h3><input placeholder="Name" className="w-full p-3 mb-3 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none" value={form.name} onChange={e=>setForm({...form, name:e.target.value})}/><div className="flex gap-2 mb-3"><input placeholder="Total Amount" className="flex-1 p-3 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none" value={form.amount} onChange={e=>setForm({...form, amount:e.target.value})}/><select className="bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl px-3" value={form.currency} onChange={e=>setForm({...form, currency:e.target.value})}><option value="Ks">Ks</option><option value="$">$</option></select></div><textarea placeholder="Note (optional)" rows="2" className="w-full p-3 mb-4 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none" value={form.note} onChange={e=>setForm({...form, note:e.target.value})}></textarea><button onClick={()=>{ if(form.id) onUpdate(form.id, form); else onAdd({...form, type:view, paid:0}); setShowAddModal(false); }} className="w-full bg-primary text-white py-3 rounded-xl font-bold">Save</button><button onClick={()=>setShowAddModal(false)} className="w-full mt-2 text-slate-400 text-sm">Cancel</button></div></div>)}{repayItem && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"><div className="bg-white dark:bg-darkCard w-[90%] max-w-sm p-6 rounded-2xl shadow-2xl animate-slideUp"><h3 className="font-bold mb-2 text-slate-800 dark:text-white">Add Payment</h3><p className="text-xs text-slate-500 dark:text-slate-400 mb-4">For: {repayItem.name}</p><input type="number" autoFocus placeholder="Enter Amount" className="w-full p-4 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl text-lg font-bold border-2 border-primary mb-4 outline-none" value={repayAmount} onChange={e=>setRepayAmount(e.target.value)}/><button onClick={handleRepayment} className="w-full bg-success text-white py-3 rounded-xl font-bold">Confirm Pay</button><button onClick={()=>{setRepayItem(null); setRepayAmount('');}} className="w-full mt-2 text-slate-400 text-sm">Cancel</button></div></div>)}</div>);
         }
 
         function AssetsTab({ data, onAdd, onDelete }) {
             const [isOpen, setIsOpen] = useState(false);
             const [form, setForm] = useState({ name: '', amount: '', currency: '$', category: 'Cash' });
             const categories = ['Cash', 'Investment', 'Property'];
-            return (
-                <div className="pb-20 animate-slideUp">
-                    <div className="flex justify-between items-center mb-4 px-2"><h2 className="text-lg font-bold text-slate-700 dark:text-white">Assets</h2><button onClick={()=>setIsOpen(true)} className="text-primary text-sm font-bold bg-primary/10 px-3 py-1 rounded-lg">+ Add New</button></div>
-                    <div className="space-y-4">{categories.map(cat => { const items = (data || []).filter(i => i.category === cat); if (items.length === 0) return null; return (<div key={cat}><h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{cat}</h3><div className="space-y-2">{items.map(item => (<div key={item.id} className="bg-white dark:bg-darkCard p-3 rounded-xl shadow-sm flex justify-between items-center border border-slate-100 dark:border-slate-700"><div><h4 className="font-bold text-slate-700 dark:text-white">{item.name}</h4><p className="text-[10px] text-slate-400">{new Date(item.date).toLocaleDateString()}</p></div><div className="flex items-center gap-3"><span className="font-bold text-primary">{safeNum(item.amount).toLocaleString()} {item.currency}</span><button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500"><Icons.Trash className="w-4 h-4"/></button></div></div>))}</div></div>)})}</div>
-                    {isOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"><div className="bg-white dark:bg-darkCard w-3/4 p-6 rounded-2xl shadow-2xl"><h3 className="font-bold mb-4 text-slate-800 dark:text-white">Add Asset</h3><div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-lg mb-3">{categories.map(c=><button key={c} onClick={()=>setForm({...form, category:c})} className={`flex-1 py-1.5 text-[10px] font-bold rounded-md ${form.category===c?'bg-white dark:bg-darkCard shadow text-primary':'text-slate-400'}`}>{c}</button>)}</div><input placeholder="Name" className="w-full p-3 mb-3 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none" onChange={e=>setForm({...form, name:e.target.value})}/><div className="flex gap-2 mb-4"><input placeholder="Value" type="number" className="flex-1 p-3 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none" onChange={e=>setForm({...form, amount:e.target.value})}/><select className="bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl px-3" onChange={e=>setForm({...form, currency:e.target.value})}><option value="$">$</option><option value="Ks">Ks</option></select></div><button onClick={()=>{onAdd({...form}); setIsOpen(false)}} className="w-full bg-primary text-white py-3 rounded-xl font-bold">Save</button><button onClick={()=>setIsOpen(false)} className="w-full mt-2 text-slate-400 text-sm">Cancel</button></div></div>)}
-                </div>
-            )
+            return (<div className="pb-20 animate-slideUp"><div className="flex justify-between items-center mb-4 px-2"><h2 className="text-lg font-bold text-slate-700 dark:text-white">Assets</h2><button onClick={()=>setIsOpen(true)} className="text-primary text-sm font-bold bg-primary/10 px-3 py-1 rounded-lg">+ Add New</button></div><div className="space-y-4">{categories.map(cat => { const items = (data || []).filter(i => i.category === cat); if (items.length === 0) return null; return (<div key={cat}><h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{cat}</h3><div className="space-y-2">{items.map(item => (<div key={item.id} className="bg-white dark:bg-darkCard p-3 rounded-xl shadow-sm flex justify-between items-center border border-slate-100 dark:border-slate-700"><div><h4 className="font-bold text-slate-700 dark:text-white">{item.name}</h4><p className="text-[10px] text-slate-400">{new Date(item.date).toLocaleDateString()}</p></div><div className="flex items-center gap-3"><span className="font-bold text-primary">{safeNum(item.amount).toLocaleString()} {item.currency}</span><button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500"><Icons.Trash className="w-4 h-4"/></button></div></div>))}</div></div>)})}</div>{isOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"><div className="bg-white dark:bg-darkCard w-3/4 p-6 rounded-2xl shadow-2xl"><h3 className="font-bold mb-4 text-slate-800 dark:text-white">Add Asset</h3><div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-lg mb-3">{categories.map(c=><button key={c} onClick={()=>setForm({...form, category:c})} className={`flex-1 py-1.5 text-[10px] font-bold rounded-md ${form.category===c?'bg-white dark:bg-darkCard shadow text-primary':'text-slate-400'}`}>{c}</button>)}</div><input placeholder="Name" className="w-full p-3 mb-3 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none" onChange={e=>setForm({...form, name:e.target.value})}/><div className="flex gap-2 mb-4"><input placeholder="Value" type="number" className="flex-1 p-3 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none" onChange={e=>setForm({...form, amount:e.target.value})}/><select className="bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl px-3" onChange={e=>setForm({...form, currency:e.target.value})}><option value="$">$</option><option value="Ks">Ks</option></select></div><button onClick={()=>{onAdd({...form}); setIsOpen(false)}} className="w-full bg-primary text-white py-3 rounded-xl font-bold">Save</button><button onClick={()=>setIsOpen(false)} className="w-full mt-2 text-slate-400 text-sm">Cancel</button></div></div>)}</div>);
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
