@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Finance Master V16 (Budget Icons)</title>
+    <title>Finance Master V16 (Data Recovery)</title>
     <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -65,62 +65,29 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
+        // --- DATA RECOVERY KEYS ---
+        // This checks older versions to find your data
         const DATA_KEY = 'finance_master_v16_local';
+        const OLD_DATA_KEYS = [
+            'finance_master_v15_local', 
+            'finance_master_v14_local', 
+            'finance_master_v13_local', 
+            'finance_master_local'
+        ];
         const SYNC_ID_KEY = 'finance_master_sync_id';
 
-        // --- ICONS (CUSTOMIZED) ---
+        // --- ICONS ---
         const Icon = ({ d, className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d={d} /></svg>;
         const Icons = {
-            // Existing Utility Icons
-            PieChart: () => <Icon d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" className="w-5 h-5" />, // Dashboard
+            PieChart: () => <Icon d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" className="w-5 h-5" />,
             Wallet: () => <Icon d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" className="w-5 h-5" />,
             Exchange: () => <Icon d="M20.66 12L18.06 14.6a2.828 2.828 0 0 1-4 0l-3.34-3.34a2.828 2.828 0 0 0-4 0L4.06 13.94a2.828 2.828 0 1 0 4 4l2.66-2.66 2.6 2.6a2.828 2.828 0 1 0 4-4l-3.34-3.34a2.828 2.828 0 0 1 4 0l2.68 2.68" className="w-6 h-6" />,
             Briefcase: () => <Icon d="M20 7h-4V4c0-1.1-.9-2-2-2h-4C9 2 8 2.9 8 4v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2z" className="w-5 h-5" />,
             Target: () => <Icon d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm0-14a6 6 0 1 0 6 6 6 6 0 0 0-6-6zm0 10a4 4 0 1 1 4-4 4 4 0 0 1-4 4z" className="w-5 h-5" />,
-            
-            // New Custom Icons for Navigation
-            NavCashFlow: () => ( 
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <path d="M14 2v6h6" />
-                    <path d="M16 13H8" />
-                    <path d="M16 17H8" />
-                    <path d="M10 9H8" />
-                    <circle cx="12" cy="12" r="9" className="opacity-0" /> 
-                </svg>
-            ),
-            NavBudget: () => ( 
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-                    <path d="M3 21h18" />
-                    <path d="M5 21v-7" />
-                    <path d="M9 21v-10" />
-                    <path d="M13 21v-12" />
-                    <path d="M17 21v-5" />
-                    <path d="M3 14l18-10" />
-                    <path d="M17 4h4v4" />
-                </svg>
-            ),
-            NavDebt: () => ( 
-                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-                    <circle cx="14" cy="12" r="8" />
-                    <path d="M14 8v8" />
-                    <path d="M12 10h4" />
-                    <path d="M12 14h4" />
-                    <path d="M2 10h3" />
-                    <path d="M2 14h3" />
-                    <path d="M4 12h2" />
-                </svg>
-            ),
-            NavAsset: () => ( 
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-                    <path d="M17 10V7a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v3" />
-                    <path d="M5 14h14l-1.5 6.5a2 2 0 0 1-2 1.5h-7a2 2 0 0 1-2-1.5L5 14z" />
-                    <path d="M12 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
-                    <path d="M12 14v-4" />
-                </svg>
-            ),
-
-            // Standard Icons
+            NavCashFlow: () => ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M16 13H8" /><path d="M16 17H8" /><path d="M10 9H8" /><circle cx="12" cy="12" r="9" className="opacity-0" /></svg>),
+            NavBudget: () => ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M3 21h18" /><path d="M5 21v-7" /><path d="M9 21v-10" /><path d="M13 21v-12" /><path d="M17 21v-5" /><path d="M3 14l18-10" /><path d="M17 4h4v4" /></svg>),
+            NavDebt: () => ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><circle cx="14" cy="12" r="8" /><path d="M14 8v8" /><path d="M12 10h4" /><path d="M12 14h4" /><path d="M2 10h3" /><path d="M2 14h3" /><path d="M4 12h2" /></svg>),
+            NavAsset: () => ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M17 10V7a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v3" /><path d="M5 14h14l-1.5 6.5a2 2 0 0 1-2 1.5h-7a2 2 0 0 1-2-1.5L5 14z" /><path d="M12 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" /><path d="M12 14v-4" /></svg>),
             Plus: () => <Icon d="M12 5v14M5 12h14" className="w-6 h-6" />,
             Trash: () => <Icon d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" className="w-4 h-4" />,
             Pencil: () => <Icon d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" className="w-4 h-4" />,
@@ -166,13 +133,35 @@
             { id: 'exp6', type: 'expense', name: 'Gift', icon: 'Gift', color: '#ef4444' },       
         ];
 
+        // --- DATA LOADING & MIGRATION LOGIC ---
         const loadLocalData = () => {
             try {
+                // 1. Try to load current version (V16)
                 const raw = localStorage.getItem(DATA_KEY);
                 const defaultData = { cashflow: [], debts: [], assets: [], budgets: [], categories: DEFAULT_CATEGORIES, settings: { budget: 0, darkMode: false, pin: null } };
-                if (!raw) return defaultData;
-                const parsed = JSON.parse(raw);
-                return { ...defaultData, ...parsed, categories: Array.isArray(parsed.categories) && parsed.categories.length > 0 ? parsed.categories : DEFAULT_CATEGORIES };
+                
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    return { ...defaultData, ...parsed, categories: Array.isArray(parsed.categories) && parsed.categories.length > 0 ? parsed.categories : DEFAULT_CATEGORIES };
+                }
+
+                // 2. If V16 is empty, look for OLD keys (V15, V14, V13)
+                for (const oldKey of OLD_DATA_KEYS) {
+                    const oldRaw = localStorage.getItem(oldKey);
+                    if (oldRaw) {
+                        const oldParsed = JSON.parse(oldRaw);
+                        // Save this data to the new key instantly so it persists
+                        const migratedData = { ...defaultData, ...oldParsed };
+                        localStorage.setItem(DATA_KEY, JSON.stringify(migratedData));
+                        
+                        // Notify user (Simple alert for visibility)
+                        setTimeout(() => alert("Found data from previous version! Imported successfully."), 500);
+                        
+                        return migratedData;
+                    }
+                }
+
+                return defaultData;
             } catch { return { cashflow: [], debts: [], assets: [], budgets: [], categories: DEFAULT_CATEGORIES, settings: { budget: 0, darkMode: false, pin: null } }; }
         };
 
@@ -454,31 +443,13 @@
             const [limit, setLimit] = useState('');
             const currentMonthKey = new Date().toISOString().slice(0, 7);
             const expenses = (data.cashflow || []).filter(i => i.type === 'expense' && i.date && i.date.startsWith(currentMonthKey));
-            
             const expenseCats = (data.categories || []).filter(c => c.type === 'expense');
-
-            const getCatInfo = (name) => {
-                const found = (data.categories || []).find(c => c.name === name);
-                return found || { icon: 'Target', color: '#cbd5e1' };
-            };
-
-            const handleAdd = () => {
-                if(selectedCat && limit) {
-                    onAdd({ name: selectedCat, limit });
-                    setShowAdd(false);
-                    setSelectedCat('');
-                    setLimit('');
-                } else {
-                    alert("Please select a category and enter a limit");
-                }
-            };
+            const getCatInfo = (name) => { const found = (data.categories || []).find(c => c.name === name); return found || { icon: 'Target', color: '#cbd5e1' }; };
+            const handleAdd = () => { if(selectedCat && limit) { onAdd({ name: selectedCat, limit }); setShowAdd(false); setSelectedCat(''); setLimit(''); } else { alert("Please select a category and enter a limit"); } };
 
             return (
                 <div className="pb-20 animate-slideUp">
-                    <div className="flex justify-between items-center mb-4 px-2">
-                        <h2 className="text-lg font-bold text-slate-700 dark:text-white">Monthly Budgets</h2>
-                        <button onClick={()=>setShowAdd(true)} className="text-primary text-sm font-bold bg-primary/10 px-3 py-1 rounded-lg">+ Add New</button>
-                    </div>
+                    <div className="flex justify-between items-center mb-4 px-2"><h2 className="text-lg font-bold text-slate-700 dark:text-white">Monthly Budgets</h2><button onClick={()=>setShowAdd(true)} className="text-primary text-sm font-bold bg-primary/10 px-3 py-1 rounded-lg">+ Add New</button></div>
                     <div className="space-y-4">
                         {(data.budgets || []).length === 0 ? <p className="text-center text-slate-400 text-sm py-10">No budgets set. Create one to track spending.</p> :
                         (data.budgets || []).map(b => {
@@ -494,19 +465,8 @@
                             return (
                                 <div key={b.id} className="bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden">
                                     <div className="flex justify-between items-center mb-3">
-                                        <div className="flex items-center gap-3">
-                                             <div className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: color }}>
-                                                <IconComp className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-slate-800 dark:text-white text-base">{b.name}</h4>
-                                                <p className="text-[10px] text-slate-400">Limit: ${limitVal.toLocaleString()}</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className={`font-black text-lg ${isOver ? 'text-danger' : (isNear ? 'text-warning' : 'text-success')}`}>${spent.toLocaleString()}</div>
-                                            {isOver && <div className="text-[10px] font-bold text-white bg-danger px-1.5 py-0.5 rounded animate-pulse inline-block">OVER!</div>}
-                                        </div>
+                                        <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: color }}><IconComp className="w-5 h-5" /></div><div><h4 className="font-bold text-slate-800 dark:text-white text-base">{b.name}</h4><p className="text-[10px] text-slate-400">Limit: ${limitVal.toLocaleString()}</p></div></div>
+                                        <div className="text-right"><div className={`font-black text-lg ${isOver ? 'text-danger' : (isNear ? 'text-warning' : 'text-success')}`}>${spent.toLocaleString()}</div>{isOver && <div className="text-[10px] font-bold text-white bg-danger px-1.5 py-0.5 rounded animate-pulse inline-block">OVER!</div>}</div>
                                     </div>
                                     <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden"><div className={`h-full rounded-full ${colorClass} progress-bar`} style={{width: `${percent}%`}}></div></div>
                                     <button onClick={()=>onDelete(b.id)} className="absolute top-2 right-2 p-1 text-slate-300 hover:text-danger opacity-0 hover:opacity-100 transition-opacity"><Icons.X /></button>
@@ -518,23 +478,7 @@
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
                             <div className="bg-white dark:bg-darkCard w-[90%] max-w-sm p-6 rounded-2xl shadow-2xl animate-slideUp">
                                 <h3 className="font-bold mb-4 text-slate-800 dark:text-white">New Budget</h3>
-                                
-                                <div className="mb-4">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Select Category</label>
-                                    <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto hide-scroll">
-                                        {expenseCats.map(c => {
-                                            const IconComp = Icons[c.icon] || Icons.Tag;
-                                            const isSelected = selectedCat === c.name;
-                                            return (
-                                                <button key={c.id} onClick={() => setSelectedCat(c.name)} className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all ${isSelected ? 'border-primary bg-primary/5' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
-                                                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white mb-1" style={{backgroundColor: c.color}}><IconComp className="w-4 h-4" /></div>
-                                                    <span className={`text-[9px] font-bold truncate w-full text-center ${isSelected ? 'text-primary' : 'text-slate-500'}`}>{c.name}</span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
+                                <div className="mb-4"><label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Select Category</label><div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto hide-scroll">{expenseCats.map(c => { const IconComp = Icons[c.icon] || Icons.Tag; const isSelected = selectedCat === c.name; return (<button key={c.id} onClick={() => setSelectedCat(c.name)} className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all ${isSelected ? 'border-primary bg-primary/5' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-700'}`}><div className="w-8 h-8 rounded-full flex items-center justify-center text-white mb-1" style={{backgroundColor: c.color}}><IconComp className="w-4 h-4" /></div><span className={`text-[9px] font-bold truncate w-full text-center ${isSelected ? 'text-primary' : 'text-slate-500'}`}>{c.name}</span></button>); })}</div></div>
                                 <input placeholder="Monthly Limit ($)" type="number" className="w-full p-4 mb-4 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none font-bold" value={limit} onChange={e=>setLimit(e.target.value)}/>
                                 <button onClick={handleAdd} className="w-full bg-primary text-white py-3 rounded-xl font-bold">Create Budget</button>
                                 <button onClick={()=>setShowAdd(false)} className="w-full mt-2 text-slate-400 text-sm">Cancel</button>
@@ -545,7 +489,6 @@
             );
         }
 
-        // --- CASHFLOW ---
         function CashflowTab({ data, categories, budgets, onAdd, onUpdate, onDelete, onAddCategory, onDeleteCategory }) {
             const [isOpen, setIsOpen] = useState(false);
             const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
