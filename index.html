@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Finance Master V20 (Crash Proof)</title>
+    <title>Finance Master V21 (Auto Repair)</title>
     <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -65,7 +65,6 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        // *** STABLE DATA KEY ***
         const DATA_KEY = 'finance_master_final_stable';
         const SYNC_ID_KEY = 'finance_master_sync_id';
 
@@ -145,13 +144,56 @@
         class ErrorBoundary extends Component {
             constructor(props) { super(props); this.state = { hasError: false }; }
             static getDerivedStateFromError(error) { return { hasError: true }; }
+            
+            // *** REPAIR FUNCTION ***
+            fixCorruptData = () => {
+                try {
+                    const raw = localStorage.getItem(DATA_KEY);
+                    if (!raw) { window.location.reload(); return; }
+                    
+                    const data = JSON.parse(raw);
+                    const today = new Date().toISOString();
+                    
+                    // Fix Cashflow Dates
+                    if(data.cashflow && Array.isArray(data.cashflow)) {
+                        data.cashflow = data.cashflow.map(item => {
+                            let isValid = false;
+                            if(item.date && typeof item.date === 'string') {
+                                const d = new Date(item.date);
+                                if(!isNaN(d.getTime())) isValid = true;
+                            }
+                            
+                            if(!isValid) {
+                                // If corrupt, set to today and add a note
+                                item.date = today;
+                                item.description = (item.description || item.title || "") + " (Recovered)";
+                            }
+                            return item;
+                        });
+                    }
+                    
+                    // Save corrected data
+                    localStorage.setItem(DATA_KEY, JSON.stringify(data));
+                    alert("Repair Complete! Reloading...");
+                    window.location.reload();
+                    
+                } catch(e) {
+                    alert("Repair failed: " + e.message);
+                    // Last resort: Clear data if repair fails? Maybe too dangerous.
+                    // Just reload for now.
+                    window.location.reload();
+                }
+            }
+
             render() { 
                 if (this.state.hasError) {
                     return (
-                        <div className="h-screen flex flex-col items-center justify-center p-6 text-center">
-                            <h2 className="text-xl font-bold text-danger mb-4">Something went wrong</h2>
-                            <p className="text-sm text-slate-500 mb-6">A corrupt data entry caused a crash. Click below to reset the view (your data is safe).</p>
-                            <button onClick={() => window.location.reload()} className="bg-primary text-white px-6 py-3 rounded-xl font-bold">Refresh App</button>
+                        <div className="h-screen flex flex-col items-center justify-center p-6 text-center bg-slate-900 text-white">
+                            <h2 className="text-xl font-bold text-red-500 mb-2">Something went wrong</h2>
+                            <p className="text-sm text-slate-400 mb-6">A corrupt data entry caused a crash. Click below to auto-fix the data.</p>
+                            <button onClick={this.fixCorruptData} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2">
+                                <Icons.Check /> Fix Corrupt Data (Repair)
+                            </button>
                         </div>
                     ); 
                 } 
@@ -234,7 +276,6 @@
                     unsub = onSnapshot(ref, (snap) => {
                         if (snap.exists()) {
                             const cloudData = snap.data();
-                            // Logic: If Local is Empty AND Cloud has data, load Cloud.
                             if (data.cashflow.length === 0 && cloudData.cashflow && cloudData.cashflow.length > 0) {
                                 if(!cloudData.categories) cloudData.categories = DEFAULT_CATEGORIES;
                                 setData(cloudData);
@@ -494,7 +535,7 @@
             );
         }
 
-        // *** CRASH FIX HERE: Added robust date handling in CashflowTab ***
+        // *** Safe Date Handling ***
         function CashflowTab({ data, categories, budgets, onAdd, onUpdate, onDelete, onAddCategory, onDeleteCategory }) {
             const [isOpen, setIsOpen] = useState(false);
             const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
@@ -503,12 +544,16 @@
             const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7));
             
             // Safe filter: checks if date exists and is string
-            const monthData = (data || []).filter(item => item.date && typeof item.date === 'string' && item.date.startsWith(currentMonth));
+            const monthData = (data || []).filter(item => {
+                if(!item.date) return false;
+                // If it's just garbage string that doesn't look like date, skip
+                if(typeof item.date !== 'string') return false; 
+                return item.date.startsWith(currentMonth);
+            });
             
             const filtered = monthData.sort((a,b) => new Date(b.date) - new Date(a.date)).filter(i => filter === 'all' || i.type === filter);
             
             const grouped = filtered.reduce((groups, item) => { 
-                // Safe date grouping: wrap in try-catch to prevent crash on bad date format
                 try {
                     const dateObj = new Date(item.date);
                     if (!isNaN(dateObj.getTime())) {
