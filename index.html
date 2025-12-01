@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Finance Master V21 (Auto Repair)</title>
+    <title>Finance Master (Fresh Start)</title>
     <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -65,7 +65,9 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        const DATA_KEY = 'finance_master_final_stable';
+        // *** BRAND NEW KEY FOR FRESH START ***
+        // This ensures NO old data is loaded.
+        const DATA_KEY = 'finance_master_fresh_start_2025'; 
         const SYNC_ID_KEY = 'finance_master_sync_id';
 
         // --- ICONS ---
@@ -126,14 +128,13 @@
             { id: 'exp6', type: 'expense', name: 'Gift', icon: 'Gift', color: '#ef4444' },       
         ];
 
-        // --- DATA LOADING & MIGRATION LOGIC ---
+        // --- DATA LOADING ---
         const loadLocalData = () => {
             try {
                 const raw = localStorage.getItem(DATA_KEY);
                 const defaultData = { cashflow: [], debts: [], assets: [], budgets: [], categories: DEFAULT_CATEGORIES, settings: { budget: 0, darkMode: false, pin: null } };
                 if (raw) {
                     const parsed = JSON.parse(raw);
-                    // Ensure categories exists
                     if (!parsed.categories || !Array.isArray(parsed.categories)) parsed.categories = DEFAULT_CATEGORIES;
                     return { ...defaultData, ...parsed };
                 }
@@ -144,56 +145,13 @@
         class ErrorBoundary extends Component {
             constructor(props) { super(props); this.state = { hasError: false }; }
             static getDerivedStateFromError(error) { return { hasError: true }; }
-            
-            // *** REPAIR FUNCTION ***
-            fixCorruptData = () => {
-                try {
-                    const raw = localStorage.getItem(DATA_KEY);
-                    if (!raw) { window.location.reload(); return; }
-                    
-                    const data = JSON.parse(raw);
-                    const today = new Date().toISOString();
-                    
-                    // Fix Cashflow Dates
-                    if(data.cashflow && Array.isArray(data.cashflow)) {
-                        data.cashflow = data.cashflow.map(item => {
-                            let isValid = false;
-                            if(item.date && typeof item.date === 'string') {
-                                const d = new Date(item.date);
-                                if(!isNaN(d.getTime())) isValid = true;
-                            }
-                            
-                            if(!isValid) {
-                                // If corrupt, set to today and add a note
-                                item.date = today;
-                                item.description = (item.description || item.title || "") + " (Recovered)";
-                            }
-                            return item;
-                        });
-                    }
-                    
-                    // Save corrected data
-                    localStorage.setItem(DATA_KEY, JSON.stringify(data));
-                    alert("Repair Complete! Reloading...");
-                    window.location.reload();
-                    
-                } catch(e) {
-                    alert("Repair failed: " + e.message);
-                    // Last resort: Clear data if repair fails? Maybe too dangerous.
-                    // Just reload for now.
-                    window.location.reload();
-                }
-            }
-
             render() { 
                 if (this.state.hasError) {
                     return (
-                        <div className="h-screen flex flex-col items-center justify-center p-6 text-center bg-slate-900 text-white">
-                            <h2 className="text-xl font-bold text-red-500 mb-2">Something went wrong</h2>
-                            <p className="text-sm text-slate-400 mb-6">A corrupt data entry caused a crash. Click below to auto-fix the data.</p>
-                            <button onClick={this.fixCorruptData} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2">
-                                <Icons.Check /> Fix Corrupt Data (Repair)
-                            </button>
+                        <div className="h-screen flex flex-col items-center justify-center p-6 text-center">
+                            <h2 className="text-xl font-bold text-danger mb-4">Something went wrong</h2>
+                            <p className="text-sm text-slate-500 mb-6">A crash occurred. Click below to reset.</p>
+                            <button onClick={() => window.location.reload()} className="bg-primary text-white px-6 py-3 rounded-xl font-bold">Refresh App</button>
                         </div>
                     ); 
                 } 
@@ -201,7 +159,6 @@
             }
         }
 
-        // --- CHART & EXPORT UTILS ---
         const SimpleDonutChart = ({ data }) => {
             if (!data || data.length === 0) return <div className="text-center text-xs text-slate-400 py-4">No expense data to show chart</div>;
             const total = data.reduce((s, i) => s + i.value, 0);
@@ -275,11 +232,11 @@
                     const ref = doc(db, syncId ? "groups" : "users", syncId || user.uid);
                     unsub = onSnapshot(ref, (snap) => {
                         if (snap.exists()) {
-                            const cloudData = snap.data();
-                            if (data.cashflow.length === 0 && cloudData.cashflow && cloudData.cashflow.length > 0) {
-                                if(!cloudData.categories) cloudData.categories = DEFAULT_CATEGORIES;
-                                setData(cloudData);
-                            }
+                            // FOR FRESH START: DO NOT LOAD OLD CLOUD DATA AUTOMATICALLY
+                            // ONLY SYNC IF WE EXPLICITLY WANT TO (e.g. Multi-device same version)
+                            // But here, we prioritize the "FRESH START" mentality. 
+                            // Only load if local is empty AND cloud has data matching THIS version key structure.
+                            // To be safe, we just set status to success but don't overwrite local unless explicit.
                             setSyncStatus('success');
                         } else setSyncStatus('idle');
                     }, (err) => { console.error(err); setSyncStatus('error'); });
@@ -535,36 +492,15 @@
             );
         }
 
-        // *** Safe Date Handling ***
         function CashflowTab({ data, categories, budgets, onAdd, onUpdate, onDelete, onAddCategory, onDeleteCategory }) {
             const [isOpen, setIsOpen] = useState(false);
             const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
             const [editItem, setEditItem] = useState(null);
             const [filter, setFilter] = useState('all');
             const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7));
-            
-            // Safe filter: checks if date exists and is string
-            const monthData = (data || []).filter(item => {
-                if(!item.date) return false;
-                // If it's just garbage string that doesn't look like date, skip
-                if(typeof item.date !== 'string') return false; 
-                return item.date.startsWith(currentMonth);
-            });
-            
+            const monthData = (data || []).filter(item => item.date && item.date.startsWith(currentMonth));
             const filtered = monthData.sort((a,b) => new Date(b.date) - new Date(a.date)).filter(i => filter === 'all' || i.type === filter);
-            
-            const grouped = filtered.reduce((groups, item) => { 
-                try {
-                    const dateObj = new Date(item.date);
-                    if (!isNaN(dateObj.getTime())) {
-                        const d = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); 
-                        if (!groups[d]) groups[d] = []; 
-                        groups[d].push(item);
-                    }
-                } catch(e) { console.warn("Skipping bad date item", item); }
-                return groups; 
-            }, {});
-
+            const grouped = filtered.reduce((groups, item) => { const d = new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); if (!groups[d]) groups[d] = []; groups[d].push(item); return groups; }, {});
             const changeMonth = (d) => { const date = new Date(currentMonth + '-01'); date.setMonth(date.getMonth() + d); setCurrentMonth(date.toISOString().slice(0, 7)); };
             const formatMonth = (ym) => { const [y, m] = ym.split('-'); return new Date(y, m - 1).toLocaleString('default', { month: 'long', year: 'numeric' }); };
             const getCategoryIcon = (catName) => { const found = categories.find(c => c.name === catName); if (found && Icons[found.icon]) { const IconComp = Icons[found.icon]; return <IconComp className="w-5 h-5 text-white" />; } return <span className="text-white font-bold text-xs">{catName.charAt(0)}</span>; };
@@ -574,7 +510,7 @@
                 <div className="pb-20 space-y-4 animate-slideUp">
                     <div className="flex justify-between items-center"><div className="flex bg-white dark:bg-darkCard p-2 rounded-xl shadow-sm items-center gap-2"><button onClick={() => changeMonth(-1)}><Icons.Left className="w-4 h-4 text-slate-400 hover:text-primary"/></button><div className="font-bold text-slate-700 dark:text-white text-sm w-24 text-center">{formatMonth(currentMonth)}</div><button onClick={() => changeMonth(1)}><Icons.Right className="w-4 h-4 text-slate-400 hover:text-primary"/></button></div><button onClick={() => setIsCategoryManagerOpen(true)} className="px-3 py-2 bg-primary/10 text-primary rounded-xl text-xs font-bold flex items-center gap-1 hover:bg-primary hover:text-white transition-colors"><Icons.Tag className="w-4 h-4" /> Categories</button></div>
                     <div className="flex bg-gray-200 dark:bg-slate-800 p-1 rounded-xl">{['all', 'income', 'expense'].map(t => (<button key={t} onClick={() => setFilter(t)} className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase transition-all ${filter === t ? 'bg-white dark:bg-darkCard shadow text-primary dark:text-white' : 'text-slate-500'}`}>{t}</button>))}</div>
-                    {Object.keys(grouped).length === 0 ? <div className="text-center py-20 text-slate-400 text-sm">No records found for {formatMonth(currentMonth)}</div> : Object.keys(grouped).map(date => (<div key={date}><h3 className="text-xs font-bold text-slate-400 mb-2 pl-1">{date}</h3><div className="bg-white dark:bg-darkCard rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">{grouped[date].map((item, idx) => (<div key={item.id} className={`p-4 flex justify-between items-center ${idx !== grouped[date].length-1 ? 'border-b border-slate-50 dark:border-slate-800' : ''}`}><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm" style={{ backgroundColor: getCategoryColor(item.category) }}>{getCategoryIcon(item.category)}</div><div><h4 className="font-bold text-slate-700 dark:text-slate-200 text-sm">{item.title}</h4>{item.category && <span className="text-[10px] bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-500">{item.category}</span>}</div></div><div className="flex items-center gap-3"><span className={`font-bold text-sm ${item.type==='income'?'text-success':'text-slate-700 dark:text-slate-300'}`}>{item.type==='income'?'+':'-'}${safeNum(item.amount).toLocaleString()}</span><button onClick={() => { setEditItem(item); setIsOpen(true); }} className="p-1 bg-slate-50 dark:bg-slate-700 rounded text-slate-400 hover:text-primary"><Icons.Pencil className="w-3 h-3"/></button><button onClick={() => onDelete(item.id)} className="p-1 bg-slate-50 dark:bg-slate-700 rounded text-slate-400 hover:text-danger"><Icons.Trash className="w-3 h-3"/></button></div></div>))}</div></div>))}
+                    {Object.keys(grouped).length === 0 ? <div className="text-center py-20 text-slate-400 text-sm">No records found</div> : Object.keys(grouped).map(date => (<div key={date}><h3 className="text-xs font-bold text-slate-400 mb-2 pl-1">{date}</h3><div className="bg-white dark:bg-darkCard rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">{grouped[date].map((item, idx) => (<div key={item.id} className={`p-4 flex justify-between items-center ${idx !== grouped[date].length-1 ? 'border-b border-slate-50 dark:border-slate-800' : ''}`}><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm" style={{ backgroundColor: getCategoryColor(item.category) }}>{getCategoryIcon(item.category)}</div><div><h4 className="font-bold text-slate-700 dark:text-slate-200 text-sm">{item.title}</h4>{item.category && <span className="text-[10px] bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-500">{item.category}</span>}</div></div><div className="flex items-center gap-3"><span className={`font-bold text-sm ${item.type==='income'?'text-success':'text-slate-700 dark:text-slate-300'}`}>{item.type==='income'?'+':'-'}${safeNum(item.amount).toLocaleString()}</span><button onClick={() => { setEditItem(item); setIsOpen(true); }} className="p-1 bg-slate-50 dark:bg-slate-700 rounded text-slate-400 hover:text-primary"><Icons.Pencil className="w-3 h-3"/></button><button onClick={() => onDelete(item.id)} className="p-1 bg-slate-50 dark:bg-slate-700 rounded text-slate-400 hover:text-danger"><Icons.Trash className="w-3 h-3"/></button></div></div>))}</div></div>))}
                     <button onClick={() => { setEditItem(null); setIsOpen(true); }} className="fixed bottom-24 right-5 w-14 h-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center hover:scale-105 z-20"><Icons.Plus /></button>
                     {isOpen && <TransactionModal initialData={editItem} categories={categories} onClose={() => setIsOpen(false)} onSave={(data) => { if(editItem) onUpdate(editItem.id, data); else onAdd(data); }} />}
                     {isCategoryManagerOpen && <CategoryManager categories={categories} onAdd={onAddCategory} onDelete={onDeleteCategory} onClose={() => setIsCategoryManagerOpen(false)} />}
