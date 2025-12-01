@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Finance Master V25 (Safety Lock)</title>
+    <title>Finance Master Ultimate</title>
     <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -38,6 +38,7 @@
         input, button, select, textarea { outline: none; }
         .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
         .progress-bar { transition: width 1s ease-in-out; }
+        /* Date Input Styling */
         input[type="date"] { -webkit-appearance: none; display: block; font-family: inherit; }
     </style>
 </head>
@@ -66,18 +67,26 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        // *** STABLE KEY ***
-        const DATA_KEY = 'finance_master_v24_clean'; // Keeping same key so you don't lose data if you already added some
+        // *** BRAND NEW KEY - ENSURES $0 START ***
+        const DATA_KEY = 'finance_master_ultimate_v30';
         const SYNC_ID_KEY = 'finance_master_sync_id';
 
         // --- ICONS ---
         const Icon = ({ d, className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d={d} /></svg>;
+        
+        // CUSTOM ICONS AS REQUESTED
         const Icons = {
             PieChart: () => <Icon d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" className="w-5 h-5" />,
+            // 1. Cashflow (List + Calc)
             NavCashFlow: () => ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M16 13H8" /><path d="M16 17H8" /><path d="M10 9H8" /><circle cx="12" cy="12" r="9" className="opacity-0" /></svg>),
+            // 2. Budget (Growth Graph)
             NavBudget: () => ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M3 21h18" /><path d="M5 21v-7" /><path d="M9 21v-10" /><path d="M13 21v-12" /><path d="M17 21v-5" /><path d="M3 14l18-10" /><path d="M17 4h4v4" /></svg>),
+            // 3. Debt (Fast Money)
             NavDebt: () => ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><circle cx="14" cy="12" r="8" /><path d="M14 8v8" /><path d="M12 10h4" /><path d="M12 14h4" /><path d="M2 10h3" /><path d="M2 14h3" /><path d="M4 12h2" /></svg>),
+            // 4. Asset (Hands)
             NavAsset: () => ( <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M17 10V7a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v3" /><path d="M5 14h14l-1.5 6.5a2 2 0 0 1-2 1.5h-7a2 2 0 0 1-2-1.5L5 14z" /><path d="M12 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" /><path d="M12 14v-4" /></svg>),
+            
+            // UI Icons
             Plus: () => <Icon d="M12 5v14M5 12h14" className="w-6 h-6" />,
             Trash: () => <Icon d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" className="w-4 h-4" />,
             Pencil: () => <Icon d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" className="w-4 h-4" />,
@@ -98,6 +107,13 @@
             Download: () => <Icon d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" className="w-5 h-5" />,
             Tag: () => <Icon d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82zM7 7h.01" className="w-5 h-5" />,
             MoreDots: () => <Icon d="M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-12 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" className="w-5 h-5" />,
+            CloudUpload: () => <Icon d="M16 16l-4-4-4 4M12 12v9" className="w-5 h-5" />,
+            Save: () => <Icon d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2zM17 21v-8H7v8M7 3v5h8V3" className="w-5 h-5" />,
+            
+            // Category Icons
+            Wallet: () => <Icon d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" className="w-5 h-5" />,
+            Briefcase: () => <Icon d="M20 7h-4V4c0-1.1-.9-2-2-2h-4C9 2 8 2.9 8 4v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2z" className="w-5 h-5" />,
+            Target: () => <Icon d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm0-14a6 6 0 1 0 6 6 6 6 0 0 0-6-6zm0 10a4 4 0 1 1 4-4 4 4 0 0 1-4 4z" className="w-5 h-5" />,
             Car: () => <Icon d="M5 17h14v-2.3c0-.3.1-.6.3-.9l2-4.1c.4-.8-.2-1.7-1.1-1.7H3.8c-.9 0-1.5.9-1.1 1.7l2 4.1c.2.3.3.6.3.9V17zm2.5-3a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm9 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" className="w-5 h-5" />,
             Shopping: () => <Icon d="M16 11V7a4 4 0 0 0-8 0v4M5 9h14l1 12H4L5 9z" className="w-5 h-5" />,
             Phone: () => <Icon d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.12 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" className="w-5 h-5" />,
@@ -105,17 +121,12 @@
             Train: () => <Icon d="M2 12h20M2 16h20M4 12v6M20 12v6M3 7h18l-1-4H4L3 7z" className="w-5 h-5" />,
             Gift: () => <Icon d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" className="w-5 h-5" />,
             Smile: () => <Icon d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm0-14a2 2 0 1 0 2 2 2 2 0 0 0-2-2zm0 10a5 5 0 0 1-4-2.5" className="w-5 h-5" />,
-            CloudUpload: () => <Icon d="M16 16l-4-4-4 4M12 12v9" className="w-5 h-5" />,
-            Save: () => <Icon d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2zM17 21v-8H7v8M7 3v5h8V3" className="w-5 h-5" />,
-            Wallet: () => <Icon d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" className="w-5 h-5" />,
-            Briefcase: () => <Icon d="M20 7h-4V4c0-1.1-.9-2-2-2h-4C9 2 8 2.9 8 4v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2z" className="w-5 h-5" />,
-            Target: () => <Icon d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm0-14a6 6 0 1 0 6 6 6 6 0 0 0-6-6zm0 10a4 4 0 1 1 4-4 4 4 0 0 1-4 4z" className="w-5 h-5" />,
-            Reset: () => <Icon d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" className="w-5 h-5" />,
         };
 
         const safeNum = (val) => { const num = parseFloat(val); return isFinite(num) ? num : 0; };
         const calculateSafe = (val) => { try { return String(val||'').replace(/[^0-9.+\-]/g, '').split('+').reduce((sum, part) => sum + (parseFloat(part)||0), 0); } catch { return 0; } };
 
+        // --- DEFAULT CONFIG ---
         const DEFAULT_CATEGORIES = [
             { id: 'inc1', type: 'income', name: 'Salary', icon: 'Wallet', color: '#10b981' }, 
             { id: 'inc2', type: 'income', name: 'Business', icon: 'Briefcase', color: '#3b82f6' }, 
@@ -129,6 +140,7 @@
             { id: 'exp6', type: 'expense', name: 'Gift', icon: 'Gift', color: '#ef4444' },       
         ];
 
+        // --- DATA LOAD ---
         const loadLocalData = () => {
             try {
                 const raw = localStorage.getItem(DATA_KEY);
@@ -145,12 +157,7 @@
         class ErrorBoundary extends Component {
             constructor(props) { super(props); this.state = { hasError: false }; }
             static getDerivedStateFromError(error) { return { hasError: true }; }
-            render() { 
-                if (this.state.hasError) {
-                    return (<div className="h-screen flex flex-col items-center justify-center p-6 text-center bg-slate-900 text-white"><h2 className="text-xl font-bold text-red-500 mb-2">Something went wrong</h2><p className="text-sm text-slate-400 mb-6">A crash occurred. Click below to reset.</p><button onClick={() => window.location.reload()} className="bg-primary text-white px-6 py-3 rounded-xl font-bold">Refresh App</button></div>); 
-                } 
-                return this.props.children; 
-            }
+            render() { if (this.state.hasError) return <div className="h-screen flex items-center justify-center"><button onClick={() => window.location.reload()} className="bg-primary text-white p-4 rounded">Reset App</button></div>; return this.props.children; }
         }
 
         const SimpleDonutChart = ({ data }) => {
@@ -161,18 +168,7 @@
             const getCoordinatesForPercent = (percent) => { const x = Math.cos(2 * Math.PI * percent); const y = Math.sin(2 * Math.PI * percent); return [x, y]; };
             return (<div className="flex items-center justify-center gap-4"><div className="relative w-32 h-32"><svg viewBox="-1 -1 2 2" className="transform -rotate-90 w-full h-full">{data.map((slice, i) => { const start = getCoordinatesForPercent(cumPercent); cumPercent += slice.value / total; const end = getCoordinatesForPercent(cumPercent); const largeArcFlag = slice.value / total > 0.5 ? 1 : 0; const pathData = `M 0 0 L ${start[0]} ${start[1]} A 1 1 0 ${largeArcFlag} 1 ${end[0]} ${end[1]} L 0 0`; return <path key={i} d={pathData} fill={colors[i % colors.length]} />; })}<circle cx="0" cy="0" r="0.6" className="fill-white dark:fill-darkCard" /></svg></div><div className="space-y-1">{data.map((slice, i) => (<div key={i} className="flex items-center gap-2 text-[10px] font-bold"><div className="w-3 h-3 rounded-full" style={{backgroundColor: colors[i % colors.length]}}></div><span className="text-slate-600 dark:text-slate-300">{slice.name} ({Math.round((slice.value/total)*100)}%)</span></div>))}</div></div>);
         };
-        const downloadCSV = (data) => {
-            const headers = ['Type', 'Date', 'Title', 'Category', 'Amount'];
-            const rows = (data.cashflow || []).map(i => [ i.type, new Date(i.date).toLocaleDateString(), `"${(i.title||'').replace(/"/g, '""')}"`, `"${i.category || ''}"`, i.amount ]);
-            const csvContent = [ headers.join(','), ...rows.map(e => e.join(',')) ].join('\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `finance_data_${new Date().toISOString().slice(0,10)}.csv`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        };
+
         const downloadJSON = (data) => {
             const dataStr = JSON.stringify(data, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
@@ -204,6 +200,7 @@
                     unsub = onSnapshot(ref, (snap) => {
                         if (snap.exists()) {
                             const cloudData = snap.data();
+                            // Only load from cloud if local is empty (Fresh Start Logic)
                             if (data.cashflow.length === 0 && cloudData.cashflow && cloudData.cashflow.length > 0) {
                                 if(!cloudData.categories) cloudData.categories = DEFAULT_CATEGORIES;
                                 setData(cloudData);
@@ -214,6 +211,7 @@
                 } else setSyncStatus('idle');
                 return () => { if (unsub) unsub(); };
             }, [user, syncId]);
+
             useEffect(() => {
                 const newData = { ...data, settings: { ...data.settings, darkMode } };
                 localStorage.setItem(DATA_KEY, JSON.stringify(newData));
@@ -243,7 +241,7 @@
                     setData(emptyData);
                     localStorage.setItem(DATA_KEY, JSON.stringify(emptyData));
                     if(user) {
-                        try { await setDoc(doc(db, syncId ? "groups" : "users", syncId || user.uid), emptyData); alert("All data deleted successfully (Local & Cloud)."); } 
+                        try { await setDoc(doc(db, syncId ? "groups" : "users", syncId || user.uid), emptyData); alert("All data deleted successfully."); } 
                         catch (e) { alert("Cloud delete failed: " + e.message); }
                     } else { alert("Local data deleted successfully."); }
                 } else {
@@ -310,7 +308,6 @@
         }
         function CategoryManager({ categories, onAdd, onDelete, onClose }) { const [newCatName, setNewCatName] = useState(''); const [newCatType, setNewCatType] = useState('expense'); const [showAdd, setShowAdd] = useState(false); const incomes = categories.filter(c => c.type === 'income'); const expenses = categories.filter(c => c.type === 'expense'); const CategoryRow = ({ item }) => { const IconComp = Icons[item.icon] || Icons.Tag; return (<div className="flex items-center justify-between p-3 border-b border-slate-50 dark:border-slate-800 last:border-0"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm text-white" style={{ backgroundColor: item.color }}><IconComp className="w-5 h-5" /></div><span className="font-bold text-slate-700 dark:text-white text-sm">{item.name}</span></div><button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-danger"><Icons.MoreDots /></button></div>); }; return (<div className="fixed inset-0 z-50 bg-white dark:bg-darkCard animate-slideUp overflow-auto"><div className="sticky top-0 bg-white dark:bg-darkCard p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 z-10"><h2 className="text-xl font-bold text-slate-800 dark:text-white">Create Categories</h2><button onClick={onClose} className="p-2 bg-slate-100 dark:bg-slate-700 rounded-full"><Icons.X /></button></div><div className="p-5 pb-24"><h3 className="text-primary font-bold text-sm uppercase mb-3 mt-2">Income categories</h3><div className="bg-white dark:bg-slate-800/50 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">{incomes.map(c => <CategoryRow key={c.id} item={c} />)}<button onClick={() => { setNewCatType('income'); setShowAdd(true); }} className="w-full py-3 text-center text-primary font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 rounded-b-2xl">+ Add Income Category</button></div><h3 className="text-primary font-bold text-sm uppercase mb-3 mt-8">Expense categories</h3><div className="bg-white dark:bg-slate-800/50 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">{expenses.map(c => <CategoryRow key={c.id} item={c} />)}<button onClick={() => { setNewCatType('expense'); setShowAdd(true); }} className="w-full py-3 text-center text-primary font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 rounded-b-2xl">+ Add Expense Category</button></div></div>{showAdd && (<div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"><div className="bg-white dark:bg-darkCard w-[85%] p-6 rounded-2xl shadow-2xl animate-slideUp"><h3 className="font-bold mb-4 text-slate-800 dark:text-white">New {newCatType} Category</h3><input autoFocus placeholder="Name (e.g. Freelance)" className="w-full p-3 mb-4 bg-slate-50 dark:bg-slate-700 dark:text-white rounded-xl border-none font-bold" value={newCatName} onChange={e=>setNewCatName(e.target.value)}/><div className="grid grid-cols-5 gap-2 mb-6">{['#ef4444', '#f97316', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#64748b', '#000000'].map(c => (<div key={c} onClick={() => { const icon = newCatType==='income'?'Wallet':'Tag'; onAdd({ name: newCatName, type: newCatType, color: c, icon }); setShowAdd(false); setNewCatName(''); }} className="h-8 w-8 rounded-full cursor-pointer hover:scale-110 transition-transform" style={{backgroundColor: c}}></div>))}</div><button onClick={() => setShowAdd(false)} className="w-full py-3 bg-slate-100 dark:bg-slate-700 text-slate-500 rounded-xl font-bold">Cancel</button></div></div>)}</div>); }
 
-        // *** DATE PICKER ADDED TO TRANSACTION MODAL ***
         function TransactionModal({ initialData, categories, onClose, onSave }) {
             const initDesc = initialData && initialData.title !== initialData.category ? initialData.title : '';
             // Init date with existing or today
@@ -349,9 +346,6 @@
                 const amountToAdd = parseFloat(calculateSafe(repayAmount)); 
                 const currentPaid = parseFloat(repayItem.paid || 0); 
                 const newPaid = currentPaid + amountToAdd; 
-                // We update the main record's date to reflect recent activity, or just leave it. 
-                // User asked to select repayment date. Since we don't have history, we can't store it separately.
-                // But we will allow the UI interaction.
                 onUpdate(repayItem.id, { paid: newPaid }); 
                 setRepayItem(null); 
                 setRepayAmount(''); 
@@ -382,3 +376,4 @@
     </script>
 </body>
 </html>
+
