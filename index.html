@@ -285,7 +285,7 @@
         function DashboardTab({ data, user, onLogin, syncId }) {
             const cashOnHand = (data.cashflow || []).filter(i=>i.type==='income').reduce((s,i)=>s+safeNum(i.amount),0) - (data.cashflow || []).filter(i=>i.type==='expense').reduce((s,i)=>s+safeNum(i.amount),0);
             const assetsUsd = (data.assets || []).filter(i=>i.currency==='$').reduce((s,i)=>s+safeNum(i.amount),0);
-            const debtsUsd = (data.debts || []).filter(d=>d.currency==='$').reduce((s,d)=> s + (d.type==='lent' ? (d.amount-d.paid) : -(d.amount-d.paid)), 0);
+            const debtsUsd = (data.debts || []).filter(d=>d.currency==='$').reduce((s,d)=> d.type==='lent' ? (s + (d.amount-d.paid)) : (s - (d.amount-d.paid)), 0);
             const currentMonthKey = new Date().toISOString().slice(0, 7); 
             const thisMonthItems = (data.cashflow || []).filter(i => i.date && i.date.startsWith(currentMonthKey));
             const incomeMonth = thisMonthItems.filter(i => i.type === 'income').reduce((s, i) => s + safeNum(i.amount), 0);
@@ -304,6 +304,19 @@
                     <div className="flex gap-3">
                         <div className="flex-1 bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-center"><div className="flex items-center gap-2 mb-1"><div className="p-1.5 bg-green-100 text-green-600 rounded-lg"><Icons.ArrowUp /></div><span className="text-xs font-bold text-slate-400 uppercase">Income</span></div><div className="text-xl font-black text-slate-800 dark:text-white tracking-tight">${incomeMonth.toLocaleString()}</div></div>
                         <div className="flex-1 bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-center"><div className="flex items-center gap-2 mb-1"><div className="p-1.5 bg-red-100 text-red-600 rounded-lg"><Icons.ArrowDown /></div><span className="text-xs font-bold text-slate-400 uppercase">Expense</span></div><div className="text-xl font-black text-slate-800 dark:text-white tracking-tight">${expenseMonth.toLocaleString()}</div></div>
+                        
+                        {/* NEW BALANCE CARD */}
+                        <div className="flex-1 bg-white dark:bg-darkCard p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-center">
+                            <div className="flex items-center gap-2 mb-1">
+                                <div className={`p-1.5 rounded-lg ${(incomeMonth - expenseMonth) >= 0 ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
+                                    <Icons.Wallet />
+                                </div>
+                                <span className="text-xs font-bold text-slate-400 uppercase">Balance</span>
+                            </div>
+                            <div className={`text-xl font-black tracking-tight ${(incomeMonth - expenseMonth) >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+                                ${((incomeMonth - expenseMonth) || 0).toLocaleString()}
+                            </div>
+                        </div>
                     </div>
                     <div className="bg-white dark:bg-darkCard p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800"><h3 className="text-xs font-bold text-slate-400 uppercase mb-4 text-center">Spending by Category ({monthName})</h3><SimpleDonutChart data={chartData} /></div>
                     {!user && (<div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800 p-4 rounded-xl flex items-center justify-between"><div><h4 className="font-bold text-orange-800 dark:text-orange-200 text-sm">Data Not Synced</h4><p className="text-xs text-orange-600 dark:text-orange-300">Login to backup your data.</p></div><button onClick={onLogin} className="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md">Login</button></div>)}
@@ -480,6 +493,8 @@
                                 <p className="text-[10px] uppercase font-bold text-slate-400">Total</p>
                                 <p className="text-2xl font-black text-primary">${total.toLocaleString()}</p>
                             </div>}
+                            {/* ADDED X CLOSE BUTTON */}
+                            <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white"><Icons.X /></button>
                         </div>
 
                         {/* Add New Section */}
@@ -502,9 +517,10 @@
                                 sortedItems.map((item) => (
                                     <div key={item.id} className="flex justify-between items-center bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 mb-2">
                                         <div className="flex items-center gap-3">
-                                            <div className="text-center bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">
-                                                <p className="text-[10px] font-bold text-slate-400">{new Date(item.date).getDate()}</p>
-                                                <p className="text-[8px] font-bold text-slate-300 uppercase">{new Date(item.date).toLocaleDateString('en-US', {weekday:'short'})}</p>
+                                            {/* MODIFIED DATE DISPLAY STYLE (Green Box, Dark Text) */}
+                                            <div className="text-center bg-green-100 px-2 py-1 rounded-lg">
+                                                <p className="text-[10px] font-black text-slate-900">{new Date(item.date).getDate()}</p>
+                                                <p className="text-[8px] font-bold text-green-700 uppercase">{new Date(item.date).toLocaleDateString('en-US', {weekday:'short'})}</p>
                                             </div>
                                             <div>
                                                 <p className="text-xs font-bold text-slate-700 dark:text-slate-200">{item.title}</p>
@@ -520,11 +536,7 @@
                                 ))}
                             </div>
                         )}
-
-                        {/* Footer */}
-                        <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-darkCard">
-                            <button onClick={onClose} className="w-full py-3 bg-slate-100 dark:bg-slate-700 text-slate-500 text-xs font-bold rounded-xl">Close</button>
-                        </div>
+                        {/* Removed redundant Close button from footer */}
                     </div>
                 </div>
             );
@@ -722,6 +734,8 @@
                                 <p className="text-[10px] uppercase font-bold text-slate-400">Remaining</p>
                                 <p className="text-2xl font-black text-primary">${remaining.toLocaleString()}</p>
                             </div>
+                            {/* ADDED X CLOSE BUTTON */}
+                            <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white"><Icons.X /></button>
                         </div>
 
                         {/* Tabs */}
@@ -772,10 +786,9 @@
                             )}
                         </div>
 
-                        {/* Footer Actions */}
+                        {/* Footer Actions - REMOVED CLOSE BUTTON */}
                         <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-darkCard flex justify-between">
                             <button onClick={handleDelete} className="text-red-500 text-xs font-bold flex items-center gap-1"><Icons.Trash className="w-4 h-4"/> Delete Record</button>
-                            <button onClick={onClose} className="text-slate-400 text-xs font-bold">Close</button>
                         </div>
                     </div>
                 </div>
