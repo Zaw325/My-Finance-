@@ -51,14 +51,15 @@
 
         const { useState, useEffect, Component } = React;
 
-        // --- FIREBASE CONFIG ---
+        // --- FIREBASE CONFIG (UPDATED) ---
         const firebaseConfig = {
-            apiKey: "AIzaSyDyuCbPWKCcWYqPCcxW92wE2nZFUu_hC-c",
-            authDomain: "mrs-sparkles-qc-app.firebaseapp.com",
-            projectId: "mrs-sparkles-qc-app",
-            storageBucket: "mrs-sparkles-qc-app.firebasestorage.app",
-            messagingSenderId: "692678390922",
-            appId: "1:692678390922:web:0e0ada716c87fe02b0a973"
+            apiKey: "AIzaSyDVyEhopzkPcwS80DNIvRmR0EI0y6o5Ncs",
+            authDomain: "finance-app-11ae8.firebaseapp.com",
+            projectId: "finance-app-11ae8",
+            storageBucket: "finance-app-11ae8.firebasestorage.app",
+            messagingSenderId: "852195941666",
+            appId: "1:852195941666:web:fb021903ff42945df1997b",
+            measurementId: "G-5F99F1JN2V" // measurementId is optional for older SDKs
         };
 
         const app = initializeApp(firebaseConfig);
@@ -66,8 +67,8 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        // *** CHANGED KEY TO RESET DATA ***
-        const DATA_KEY = 'finance_master_v46_clean_start'; 
+        // *** CHANGED KEY TO RESET DATA (V46_NEW_PROJECT) ***
+        const DATA_KEY = 'finance_master_v46_new_project'; 
         const SYNC_ID_KEY = 'finance_master_sync_id';
 
         // --- ICONS ---
